@@ -66,18 +66,17 @@ class TorqueMode(Enum):
 
 
 def _split_into_byte_chunks(value: int, length: int) -> list[int]:
-    import scservo_sdk as scs
 
     if length == 1:
         data = [value]
     elif length == 2:
-        data = [scs.SCS_LOBYTE(value), scs.SCS_HIBYTE(value)]
+        data = [value & 0xFF, (value >> 8) & 0xFF]
     elif length == 4:
         data = [
-            scs.SCS_LOBYTE(scs.SCS_LOWORD(value)),
-            scs.SCS_HIBYTE(scs.SCS_LOWORD(value)),
-            scs.SCS_LOBYTE(scs.SCS_HIWORD(value)),
-            scs.SCS_HIBYTE(scs.SCS_HIWORD(value)),
+            value & 0xFF,
+            (value >> 8) & 0xFF,
+            (value >> 16) & 0xFF,
+            (value >> 24) & 0xFF,
         ]
     return data
 
