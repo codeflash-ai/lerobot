@@ -95,11 +95,29 @@ def update_data_df(df, src_meta, dst_meta):
         pd.DataFrame: Updated DataFrame with adjusted indices.
     """
 
-    df["episode_index"] = df["episode_index"] + dst_meta.info["total_episodes"]
-    df["index"] = df["index"] + dst_meta.info["total_frames"]
+    # Perform numeric column offsets in-place on the underlying NumPy arrays
+    # to avoid creating intermediate Series objects.
+    ep_vals = df["episode_index"].to_numpy()
+    ep_vals += dst_meta.info["total_episodes"]
+    # Assign back to ensure the DataFrame reflects any changes (keeps behavior identical)
+    df["episode_index"] = ep_vals
+
+    idx_vals = df["index"].to_numpy()
+    idx_vals += dst_meta.info["total_frames"]
+    df["index"] = idx_vals
+
 
     src_task_names = src_meta.tasks.index.take(df["task_index"].to_numpy())
-    df["task_index"] = dst_meta.tasks.loc[src_task_names, "task_index"].to_numpy()
+
+    # Use integer positional indexing into dst_meta.tasks["task_index"] for speed.
+    # Detect missing labels and raise KeyError to preserve pandas .loc behavior.
+    positions = dst_meta.tasks.index.get_indexer(src_task_names)
+    if (positions < 0).any():
+        missing = src_task_names[positions < 0]
+        raise KeyError(list(missing))
+
+    dst_task_values = dst_meta.tasks["task_index"].to_numpy()
+    df["task_index"] = dst_task_values[positions]
 
     return df
 
