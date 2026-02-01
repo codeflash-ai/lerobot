@@ -348,8 +348,13 @@ class SerialMotorsBus(MotorsBusBase):
         self._comm_success: int
         self._no_error: int
 
-        self._id_to_model_dict = {m.id: m.model for m in self.motors.values()}
-        self._id_to_name_dict = {m.id: motor for motor, m in self.motors.items()}
+        # Build id->model and id->name maps in a single pass to avoid iterating over self.motors twice.
+        self._id_to_model_dict: dict[int, str] = {}
+        self._id_to_name_dict: dict[int, str] = {}
+        for motor_name, motor_obj in self.motors.items():
+            self._id_to_model_dict[motor_obj.id] = motor_obj.model
+            self._id_to_name_dict[motor_obj.id] = motor_name
+
         self._model_nb_to_model_dict = {v: k for k, v in self.model_number_table.items()}
 
         self._validate_motors()

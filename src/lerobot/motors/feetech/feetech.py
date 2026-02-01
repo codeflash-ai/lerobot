@@ -174,14 +174,19 @@ class FeetechMotorsBus(SerialMotorsBus):
 
     def _find_single_motor_p0(self, motor: str, initial_baudrate: int | None = None) -> tuple[int, int]:
         model = self.motors[motor].model
-        search_baudrates = (
-            [initial_baudrate] if initial_baudrate is not None else self.model_baudrate_table[model]
-        )
-        expected_model_nb = self.model_number_table[model]
+        # Use local references to avoid repeated attribute/dict access in the hot loop.
+        model_nb_table = self.model_number_table
+        baudrate_table = self.model_baudrate_table
+        set_baudrate = self.set_baudrate
+        broadcast_ping = self.broadcast_ping
+
+        expected_model_nb = model_nb_table[model]
+        search_baudrates = [initial_baudrate] if initial_baudrate is not None else baudrate_table[model]
+
 
         for baudrate in search_baudrates:
-            self.set_baudrate(baudrate)
-            id_model = self.broadcast_ping()
+            set_baudrate(baudrate)
+            id_model = broadcast_ping()
             if id_model:
                 found_id, found_model = next(iter(id_model.items()))
                 if found_model != expected_model_nb:
