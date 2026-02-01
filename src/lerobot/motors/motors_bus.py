@@ -1033,19 +1033,28 @@ class SerialMotorsBus(MotorsBusBase):
         else:
             raise ValueError(length)
 
+
+        # Cache attribute lookups
+        comm_success = self._comm_success
+        no_error = self._no_error
+        port_handler = self.port_handler
+        packet_handler = self.packet_handler
+
         for n_try in range(1 + num_retry):
-            value, comm, error = read_fn(self.port_handler, motor_id, address)
-            if self._is_comm_success(comm):
+            value, comm, error = read_fn(port_handler, motor_id, address)
+            if comm == comm_success:
                 break
             logger.debug(
                 f"Failed to read @{address=} ({length=}) on {motor_id=} ({n_try=}): "
-                + self.packet_handler.getTxRxResult(comm)
+                + packet_handler.getTxRxResult(comm)
             )
 
-        if not self._is_comm_success(comm) and raise_on_error:
-            raise ConnectionError(f"{err_msg} {self.packet_handler.getTxRxResult(comm)}")
-        elif self._is_error(error) and raise_on_error:
-            raise RuntimeError(f"{err_msg} {self.packet_handler.getRxPacketError(error)}")
+        if raise_on_error:
+            if comm != comm_success:
+                raise ConnectionError(f"{err_msg} {packet_handler.getTxRxResult(comm)}")
+            elif error != no_error:
+                raise RuntimeError(f"{err_msg} {packet_handler.getRxPacketError(error)}")
+
 
         return value, comm, error
 

@@ -444,9 +444,14 @@ class FeetechMotorsBus(SerialMotorsBus):
 
     def _read_model_number(self, motor_ids: list[int], raise_on_error: bool = False) -> dict[int, int]:
         model_numbers = {}
+        # Cache constants and attribute lookups
+        comm_success = self._comm_success
+        no_error = self._no_error
+        model_number_addr, model_number_len = MODEL_NUMBER
+        
         for id_ in motor_ids:
-            model_nb, comm, error = self._read(*MODEL_NUMBER, id_, raise_on_error=raise_on_error)
-            if not self._is_comm_success(comm) or self._is_error(error):
+            model_nb, comm, error = self._read(model_number_addr, model_number_len, id_, raise_on_error=raise_on_error)
+            if comm != comm_success or error != no_error:
                 continue
 
             model_numbers[id_] = model_nb
