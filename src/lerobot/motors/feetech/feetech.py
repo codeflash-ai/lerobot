@@ -425,15 +425,19 @@ class FeetechMotorsBus(SerialMotorsBus):
 
     def _read_firmware_version(self, motor_ids: list[int], raise_on_error: bool = False) -> dict[int, str]:
         firmware_versions = {}
+        # Unpack firmware address/length pairs once to avoid repeated tuple unpacking in the loop.
+        major_addr, major_len = FIRMWARE_MAJOR_VERSION
+        minor_addr, minor_len = FIRMWARE_MINOR_VERSION
+
         for id_ in motor_ids:
             firm_ver_major, comm, error = self._read(
-                *FIRMWARE_MAJOR_VERSION, id_, raise_on_error=raise_on_error
+                major_addr, major_len, id_, raise_on_error=raise_on_error
             )
             if not self._is_comm_success(comm) or self._is_error(error):
                 continue
 
             firm_ver_minor, comm, error = self._read(
-                *FIRMWARE_MINOR_VERSION, id_, raise_on_error=raise_on_error
+                minor_addr, minor_len, id_, raise_on_error=raise_on_error
             )
             if not self._is_comm_success(comm) or self._is_error(error):
                 continue
