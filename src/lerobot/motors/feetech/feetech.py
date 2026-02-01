@@ -309,12 +309,23 @@ class FeetechMotorsBus(SerialMotorsBus):
             self.write("Lock", motor, 1, num_retry=num_retry)
 
     def _encode_sign(self, data_name: str, ids_values: dict[int, int]) -> dict[int, int]:
-        for id_ in ids_values:
-            model = self._id_to_model(id_)
-            encoding_table = self.model_encoding_table.get(model)
-            if encoding_table and data_name in encoding_table:
-                sign_bit = encoding_table[data_name]
-                ids_values[id_] = encode_sign_magnitude(ids_values[id_], sign_bit)
+        # Local references to avoid repeated attribute lookups in the tight loop.
+        id_to_model = self._id_to_model_dict
+        model_encoding = self.model_encoding_table
+        encoder = encode_sign_magnitude
+
+        # Iterate over the current keys and update values in-place when needed.
+        for id_, val in ids_values.items():
+            model = id_to_model[id_]
+            encoding_table = model_encoding.get(model)
+            if encoding_table is None:
+                continue
+            # Use get instead of 'in' to avoid two lookups.
+            sign_bit = encoding_table.get(data_name)
+            if sign_bit is None:
+                continue
+            ids_values[id_] = encoder(val, sign_bit)
+
 
         return ids_values
 
