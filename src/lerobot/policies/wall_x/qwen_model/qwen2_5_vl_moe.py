@@ -51,6 +51,7 @@ logger = logging.get_logger(__name__)
 _CONFIG_FOR_DOC = "Qwen2_5_VLConfig"
 
 
+@torch.compile
 class Qwen2_5_VLMLP(nn.Module):
     def __init__(self, config, bias: bool = False):
         super().__init__()
@@ -65,6 +66,7 @@ class Qwen2_5_VLMLP(nn.Module):
         return self.down_proj(self.act_fn(self.gate_proj(hidden_state)) * self.up_proj(hidden_state))
 
 
+@torch.compile
 class Qwen2_5_VisionPatchEmbed(nn.Module):
     def __init__(
         self,
@@ -101,6 +103,7 @@ class Qwen2_5_VisionPatchEmbed(nn.Module):
         return hidden_states
 
 
+@torch.compile
 class Qwen2_5_VisionRotaryEmbedding(nn.Module):
     def __init__(self, dim: int, theta: float = 10000.0) -> None:
         super().__init__()
@@ -113,6 +116,7 @@ class Qwen2_5_VisionRotaryEmbedding(nn.Module):
         return freqs
 
 
+@torch.compile
 class Qwen2RMSNorm(nn.Module):
     def __init__(self, hidden_size, eps=1e-6):
         """
@@ -133,6 +137,7 @@ class Qwen2RMSNorm(nn.Module):
         return f"{tuple(self.weight.shape)}, eps={self.variance_epsilon}"
 
 
+@torch.compile
 class Qwen2_5_VLPatchMerger(nn.Module):
     def __init__(self, dim: int, context_dim: int, spatial_merge_size: int = 2) -> None:
         super().__init__()
@@ -159,6 +164,7 @@ def apply_rotary_pos_emb_flashatt(
     return q_embed, k_embed
 
 
+@torch.compile
 class Qwen2_5_VLVisionFlashAttention2(nn.Module):
     def __init__(self, dim: int, num_heads: int = 16) -> None:
         super().__init__()
@@ -224,6 +230,7 @@ def apply_rotary_pos_emb_vision(
     return q_embed, k_embed
 
 
+@torch.compile
 class Qwen2_5_VLVisionAttention(nn.Module):
     def __init__(self, dim: int, num_heads: int = 16) -> None:
         super().__init__()
@@ -284,6 +291,7 @@ class Qwen2_5_VLVisionAttention(nn.Module):
         return attn_output
 
 
+@torch.compile
 class Qwen2_5_VLVisionSdpaAttention(nn.Module):
     def __init__(self, dim: int, num_heads: int = 16) -> None:
         super().__init__()
@@ -341,6 +349,7 @@ QWEN2_5_VL_VISION_ATTENTION_CLASSES = {
 }
 
 
+@torch.compile
 class Qwen2_5_VLVisionBlock(nn.Module):
     def __init__(self, config, attn_implementation: str = "sdpa") -> None:
         super().__init__()
@@ -416,6 +425,7 @@ class Qwen2_5_VLPreTrainedModel(PreTrainedModel):
                 module.weight.data[module.padding_idx].zero_()
 
 
+@torch.compile
 class Qwen2_5_VisionTransformerPretrainedModel(Qwen2_5_VLPreTrainedModel):
     config_class = Qwen2_5_VLVisionConfig
     _no_split_modules = ["Qwen2_5_VLVisionBlock"]
@@ -594,6 +604,7 @@ class Qwen2_5_VisionTransformerPretrainedModel(Qwen2_5_VLPreTrainedModel):
         return hidden_states
 
 
+@torch.compile
 class Qwen2_5_VLRotaryEmbedding(nn.Module):
     def __init__(self, config: Qwen2_5_VLConfig, device=None):
         super().__init__()
@@ -659,6 +670,7 @@ class Qwen2_5_VLRotaryEmbedding(nn.Module):
         return cos.to(dtype=x.dtype), sin.to(dtype=x.dtype)
 
 
+@torch.compile
 class Qwen2MLP(nn.Module):
     def __init__(self, config):
         super().__init__()
@@ -732,6 +744,7 @@ def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
     return hidden_states.reshape(batch, num_key_value_heads * n_rep, slen, head_dim)
 
 
+@torch.compile
 class Qwen2_5_VLAttention(nn.Module):
     """
     Multi-headed attention from 'Attention Is All You Need' paper. Modified to use sliding window attention: Longformer
@@ -846,6 +859,7 @@ class Qwen2_5_VLAttention(nn.Module):
         return attn_output, attn_weights, past_key_value
 
 
+@torch.compile
 class Qwen2_5_VLFlashAttention2(Qwen2_5_VLAttention):
     """
     Qwen2_5_VL flash attention module, following Qwen2_5_VL attention module. This module inherits from `Qwen2_5_VLAttention`
@@ -950,6 +964,7 @@ class Qwen2_5_VLFlashAttention2(Qwen2_5_VLAttention):
         return attn_output, attn_weights, past_key_value
 
 
+@torch.compile
 class Qwen2_5_VLSdpaAttention(Qwen2_5_VLAttention):
     """
     Qwen2 attention module using torch.nn.functional.scaled_dot_product_attention. This module inherits from
@@ -1055,6 +1070,7 @@ QWEN2_5_VL_ATTENTION_CLASSES = {
 }
 
 
+@torch.compile
 class Qwen2_5_VLDecoderLayer(nn.Module):
     def __init__(self, config: Qwen2_5_VLConfig, layer_idx: int):
         super().__init__()
@@ -1144,6 +1160,7 @@ class Qwen2_5_VLDecoderLayer(nn.Module):
     "The bare Qwen2_5_VL Model outputting raw hidden-states without any specific head on top.",
     Qwen2_5_VL_START_DOCSTRING,
 )
+@torch.compile
 class Qwen2_5_VLModel(Qwen2_5_VLPreTrainedModel):
     def __init__(self, config: Qwen2_5_VLConfig):
         super().__init__(config)
@@ -1566,6 +1583,7 @@ QWEN2_5_VL_INPUTS_DOCSTRING = r"""
 """
 
 
+@torch.compile
 class Qwen2_5_VLForConditionalGeneration(Qwen2_5_VLPreTrainedModel, GenerationMixin):
     _tied_weights_keys = ["lm_head.weight"]
     config_class = Qwen2_5_VLConfig
@@ -2198,6 +2216,7 @@ class Qwen2_5_VLACausalLMOutputWithPast(ModelOutput):
     channel_loss_count_dict: dict[torch.FloatTensor] | None = None
 
 
+@torch.compile
 class BlockSparseMLP(nn.Module):
     def __init__(self, config):
         super().__init__()
@@ -2214,6 +2233,7 @@ class BlockSparseMLP(nn.Module):
         return self.down_proj(self.act_fn(self.gate_proj(hidden_state)) * self.up_proj(hidden_state))
 
 
+@torch.compile
 class SparseMoeBlock(nn.Module):
     def __init__(self, config, num_experts: int):
         super().__init__()
@@ -2262,6 +2282,7 @@ QWEN2_5_VL_ATTENTION_CLASSES = {
 }
 
 
+@torch.compile
 class Qwen2_5_VLDecoderLayer_with_MoE(nn.Module):
     def __init__(self, config: Qwen2_5_VLConfig, layer_idx: int, num_experts: int):
         super().__init__()
@@ -2357,6 +2378,7 @@ class Qwen2_5_VLDecoderLayer_with_MoE(nn.Module):
         return outputs
 
 
+@torch.compile
 class Qwen2_5_VLMoEModel(Qwen2_5_VLPreTrainedModel):
     """Qwen2.5-VL model with Mixture of Experts (MoE) architecture.
 

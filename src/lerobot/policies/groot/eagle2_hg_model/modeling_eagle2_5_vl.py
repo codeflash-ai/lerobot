@@ -78,6 +78,7 @@ class Eagle25VLPreTrainedModel(PreTrainedModel):
                 module.weight.data[module.padding_idx].zero_()
 
 
+@torch.compile
 class Eagle25VLForConditionalGeneration(Eagle25VLPreTrainedModel, GenerationMixin):
     config_class = Eagle25VLConfig
 

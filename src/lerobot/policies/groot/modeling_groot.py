@@ -50,6 +50,7 @@ from lerobot.utils.constants import ACTION, OBS_IMAGES
 T = TypeVar("T", bound="GrootPolicy")
 
 
+@torch.compile
 class GrootPolicy(PreTrainedPolicy):
     """Wrapper around external Groot model for LeRobot integration."""
 

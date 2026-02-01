@@ -45,6 +45,7 @@ class ClassifierOutput:
         )
 
 
+@torch.compile
 class SpatialLearnedEmbeddings(nn.Module):
     def __init__(self, height, width, channel, num_features=8):
         """
@@ -98,6 +99,7 @@ class SpatialLearnedEmbeddings(nn.Module):
         return output
 
 
+@torch.compile
 class Classifier(PreTrainedPolicy):
     """Image classifier built on top of a pre-trained encoder."""
 

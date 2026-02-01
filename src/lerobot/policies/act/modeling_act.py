@@ -38,6 +38,7 @@ from lerobot.policies.pretrained import PreTrainedPolicy
 from lerobot.utils.constants import ACTION, OBS_ENV_STATE, OBS_IMAGES, OBS_STATE
 
 
+@torch.compile
 class ACTPolicy(PreTrainedPolicy):
     """
     Action Chunking Transformer Policy as per Learning Fine-Grained Bimanual Manipulation with Low-Cost
@@ -253,6 +254,7 @@ class ACTTemporalEnsembler:
         return action
 
 
+@torch.compile
 class ACT(nn.Module):
     """Action Chunking Transformer: The underlying neural network for ACTPolicy.
 
@@ -510,6 +512,7 @@ class ACT(nn.Module):
         return actions, (mu, log_sigma_x2)
 
 
+@torch.compile
 class ACTEncoder(nn.Module):
     """Convenience module for running multiple encoder layers, maybe followed by normalization."""
 
@@ -529,6 +532,7 @@ class ACTEncoder(nn.Module):
         return x
 
 
+@torch.compile
 class ACTEncoderLayer(nn.Module):
     def __init__(self, config: ACTConfig):
         super().__init__()
@@ -568,6 +572,7 @@ class ACTEncoderLayer(nn.Module):
         return x
 
 
+@torch.compile
 class ACTDecoder(nn.Module):
     def __init__(self, config: ACTConfig):
         """Convenience module for running multiple decoder layers followed by normalization."""
@@ -591,6 +596,7 @@ class ACTDecoder(nn.Module):
         return x
 
 
+@torch.compile
 class ACTDecoderLayer(nn.Module):
     def __init__(self, config: ACTConfig):
         super().__init__()
@@ -681,6 +687,7 @@ def create_sinusoidal_pos_embedding(num_positions: int, dimension: int) -> Tenso
     return torch.from_numpy(sinusoid_table).float()
 
 
+@torch.compile
 class ACTSinusoidalPositionEmbedding2d(nn.Module):
     """2D sinusoidal positional embeddings similar to what's presented in Attention Is All You Need.
 

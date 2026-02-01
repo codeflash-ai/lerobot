@@ -183,6 +183,7 @@ def get_gemma_config(variant: str) -> GemmaConfig:  # see openpi `gemma.py: get_
         raise ValueError(f"Unknown variant: {variant}")
 
 
+@torch.compile
 class PI0FastPaliGemma(nn.Module):
     """PaliGemma model for PI0Fast"""
 
@@ -275,6 +276,7 @@ class PI0FastPaliGemma(nn.Module):
         return [prefix_output, suffix_output], prefix_past_key_values
 
 
+@torch.compile
 class PI0FastPytorch(nn.Module):  # see openpi `PI0Pytorch`
     """Core PI0Fast PyTorch model."""
 
@@ -801,6 +803,7 @@ class PI0FastPytorch(nn.Module):  # see openpi `PI0Pytorch`
         return generated_action_tokens
 
 
+@torch.compile
 class PI0FastPolicy(PreTrainedPolicy):
     """PI0Fast Policy for LeRobot."""
 

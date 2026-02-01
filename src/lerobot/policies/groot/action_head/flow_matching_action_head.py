@@ -39,6 +39,7 @@ from lerobot.policies.groot.action_head.action_encoder import (
 from .cross_attention_dit import DiT, SelfAttentionTransformer
 
 
+@torch.compile
 class CategorySpecificLinear(nn.Module):
     def __init__(self, num_categories, input_dim, hidden_dim):
         super().__init__()
@@ -53,6 +54,7 @@ class CategorySpecificLinear(nn.Module):
         return torch.bmm(x, selected_w) + selected_b.unsqueeze(1)
 
 
+@torch.compile
 class CategorySpecificMLP(nn.Module):
     def __init__(self, num_categories, input_dim, hidden_dim, output_dim):
         super().__init__()
@@ -65,6 +67,7 @@ class CategorySpecificMLP(nn.Module):
         return self.layer2(hidden, cat_ids)
 
 
+@torch.compile
 class MultiEmbodimentActionEncoder(nn.Module):
     def __init__(self, action_dim, hidden_size, num_embodiments):
         super().__init__()
@@ -159,6 +162,7 @@ class FlowmatchingActionHeadConfig(PretrainedConfig):
             setattr(self, key, value)
 
 
+@torch.compile
 class FlowmatchingActionHead(nn.Module):
     config_class = FlowmatchingActionHeadConfig
     supports_gradient_checkpointing = True

@@ -44,6 +44,7 @@ from lerobot.policies.utils import (
 from lerobot.utils.constants import ACTION, OBS_ENV_STATE, OBS_IMAGES, OBS_STATE
 
 
+@torch.compile
 class DiffusionPolicy(PreTrainedPolicy):
     """
     Diffusion Policy as per "Diffusion Policy: Visuomotor Policy Learning via Action Diffusion"
@@ -366,6 +367,7 @@ class DiffusionModel(nn.Module):
         return loss.mean()
 
 
+@torch.compile
 class SpatialSoftmax(nn.Module):
     """
     Spatial Soft Argmax operation described in "Deep Spatial Autoencoders for Visuomotor Learning" by Finn et al.
@@ -437,6 +439,7 @@ class SpatialSoftmax(nn.Module):
         return feature_keypoints
 
 
+@torch.compile
 class DiffusionRgbEncoder(nn.Module):
     """Encodes an RGB image into a 1D feature vector.
 
@@ -546,6 +549,7 @@ def _replace_submodules(
     return root_module
 
 
+@torch.compile
 class DiffusionSinusoidalPosEmb(nn.Module):
     """1D sinusoidal positional embeddings as in Attention is All You Need."""
 
@@ -563,6 +567,7 @@ class DiffusionSinusoidalPosEmb(nn.Module):
         return emb
 
 
+@torch.compile
 class DiffusionConv1dBlock(nn.Module):
     """Conv1d --> GroupNorm --> Mish"""
 
@@ -579,6 +584,7 @@ class DiffusionConv1dBlock(nn.Module):
         return self.block(x)
 
 
+@torch.compile
 class DiffusionConditionalUnet1d(nn.Module):
     """A 1D convolutional UNet with FiLM modulation for conditioning.
 
@@ -706,6 +712,7 @@ class DiffusionConditionalUnet1d(nn.Module):
         return x
 
 
+@torch.compile
 class DiffusionConditionalResidualBlock1d(nn.Module):
     """ResNet style 1D convolutional block with FiLM modulation for conditioning."""
 

@@ -62,6 +62,7 @@ logger = logging.get_logger(__name__)
 _CONFIG_FOR_DOC = "Florence2Config"
 
 
+@torch.compile
 class DropPath(nn.Module):
     """Drop paths (Stochastic Depth) per sample  (when applied in main path of residual blocks)."""
 
@@ -77,6 +78,7 @@ class DropPath(nn.Module):
         return f"drop_prob={round(self.drop_prob, 3):0.3f}"
 
 
+@torch.compile
 class LearnedAbsolutePositionEmbedding2D(nn.Module):
     """
     This module learns positional embeddings up to a fixed maximum size.
@@ -113,6 +115,7 @@ class LearnedAbsolutePositionEmbedding2D(nn.Module):
         return pos
 
 
+@torch.compile
 class PositionalEmbeddingCosine1D(nn.Module):
     """
     This class implements a very simple positional encoding. It follows closely
@@ -165,6 +168,7 @@ class PositionalEmbeddingCosine1D(nn.Module):
         return pos_embeds
 
 
+@torch.compile
 class LearnedAbsolutePositionEmbedding1D(nn.Module):
     """
     Learnable absolute positional embeddings for 1D sequences.
@@ -203,6 +207,7 @@ class LearnedAbsolutePositionEmbedding1D(nn.Module):
         return pos_embeds
 
 
+@torch.compile
 class MySequential(nn.Sequential):
     def forward(self, *inputs):
         for module in self._modules.values():
@@ -210,6 +215,7 @@ class MySequential(nn.Sequential):
         return inputs
 
 
+@torch.compile
 class PreNorm(nn.Module):
     def __init__(self, norm, fn, drop_path=None):
         super().__init__()
@@ -232,6 +238,7 @@ class PreNorm(nn.Module):
         return x, size
 
 
+@torch.compile
 class Mlp(nn.Module):
     def __init__(
         self,
@@ -257,6 +264,7 @@ class Mlp(nn.Module):
         return self.net(x), size
 
 
+@torch.compile
 class DepthWiseConv2d(nn.Module):
     def __init__(
         self,
@@ -282,6 +290,7 @@ class DepthWiseConv2d(nn.Module):
         return x, size
 
 
+@torch.compile
 class ConvEmbed(nn.Module):
     """Image to Patch Embedding"""
 
@@ -315,6 +324,7 @@ class ConvEmbed(nn.Module):
         return x, (height, width)
 
 
+@torch.compile
 class ChannelAttention(nn.Module):
     def __init__(self, dim, groups=8, qkv_bias=True):
         super().__init__()
@@ -342,6 +352,7 @@ class ChannelAttention(nn.Module):
         return x, size
 
 
+@torch.compile
 class ChannelBlock(nn.Module):
     def __init__(
         self,
@@ -397,6 +408,7 @@ def window_reverse(windows, batch_size: int, window_size: int, height: int, widt
     return x
 
 
+@torch.compile
 class WindowAttention(nn.Module):
     def __init__(self, dim, num_heads, window_size, qkv_bias=True):
         super().__init__()
@@ -457,6 +469,7 @@ class WindowAttention(nn.Module):
         return x, size
 
 
+@torch.compile
 class SpatialBlock(nn.Module):
     def __init__(
         self,
@@ -497,6 +510,7 @@ class SpatialBlock(nn.Module):
         return x, size
 
 
+@torch.compile
 class DaViT(nn.Module):
     """DaViT: Dual-Attention Transformer
 
@@ -695,6 +709,7 @@ def shift_tokens_right(input_ids: torch.Tensor, pad_token_id: int, decoder_start
     return shifted_input_ids
 
 
+@torch.compile
 class Florence2LearnedPositionalEmbedding(nn.Embedding):
     """
     This module learns positional embeddings up to a fixed maximum size.
@@ -720,6 +735,7 @@ class Florence2LearnedPositionalEmbedding(nn.Embedding):
         return super().forward(positions + self.offset)
 
 
+@torch.compile
 class Florence2ScaledWordEmbedding(nn.Embedding):
     """
     This module overrides nn.Embeddings' forward by multiplying with embeddings scale.
@@ -735,6 +751,7 @@ class Florence2ScaledWordEmbedding(nn.Embedding):
         return super().forward(input_ids) * self.embed_scale
 
 
+@torch.compile
 class Florence2Attention(nn.Module):
     """Multi-headed attention from 'Attention Is All You Need' paper"""
 
@@ -895,6 +912,7 @@ class Florence2Attention(nn.Module):
         return attn_output, attn_weights_reshaped, past_key_value
 
 
+@torch.compile
 class Florence2FlashAttention2(Florence2Attention):
     """
     Florence2 flash attention module. This module inherits from `Florence2Attention` as the weights of the module stays
@@ -1123,6 +1141,7 @@ class Florence2FlashAttention2(Florence2Attention):
         )
 
 
+@torch.compile
 class Florence2SdpaAttention(Florence2Attention):
     def forward(
         self,
@@ -1236,6 +1255,7 @@ FLORENCE2_ATTENTION_CLASSES = {
 }
 
 
+@torch.compile
 class Florence2EncoderLayer(nn.Module):
     def __init__(self, config: Florence2LanguageConfig):
         super().__init__()
@@ -1308,6 +1328,7 @@ class Florence2EncoderLayer(nn.Module):
         return outputs
 
 
+@torch.compile
 class Florence2DecoderLayer(nn.Module):
     def __init__(self, config: Florence2LanguageConfig):
         super().__init__()
@@ -1470,6 +1491,7 @@ class Florence2LanguagePreTrainedModel(PreTrainedModel):
         return dummy_inputs
 
 
+@torch.compile
 class Florence2Encoder(Florence2LanguagePreTrainedModel):
     """
     Transformer encoder consisting of *config.encoder_layers* self attention layers. Each layer is a
@@ -1659,6 +1681,7 @@ class Florence2Encoder(Florence2LanguagePreTrainedModel):
         )
 
 
+@torch.compile
 class Florence2Decoder(Florence2LanguagePreTrainedModel):
     """
     Transformer decoder consisting of *config.decoder_layers* layers. Each layer is a [`Florence2DecoderLayer`]
@@ -1950,6 +1973,7 @@ class Florence2Decoder(Florence2LanguagePreTrainedModel):
         )
 
 
+@torch.compile
 class Florence2LanguageModel(Florence2LanguagePreTrainedModel):
     _tied_weights_keys = ["encoder.embed_tokens.weight", "decoder.embed_tokens.weight"]
 
@@ -2074,6 +2098,7 @@ class Florence2LanguageModel(Florence2LanguagePreTrainedModel):
         )
 
 
+@torch.compile
 class Florence2LanguageForConditionalGeneration(Florence2LanguagePreTrainedModel, GenerationMixin):
     base_model_prefix = "model"
     _tied_weights_keys = ["encoder.embed_tokens.weight", "decoder.embed_tokens.weight", "lm_head.weight"]
@@ -2435,6 +2460,7 @@ FLORENCE2_INPUTS_DOCSTRING = r"""
     """The FLORENCE2 model which consists of a vision backbone and a language model.""",
     FLORENCE2_START_DOCSTRING,
 )
+@torch.compile
 class Florence2ForConditionalGeneration(Florence2PreTrainedModel):
     _tied_weights_keys = [
         "language_model.encoder.embed_tokens.weight",

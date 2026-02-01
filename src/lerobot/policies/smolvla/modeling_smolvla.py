@@ -222,6 +222,7 @@ def aloha_gripper_from_angular_inv(value):
     return normalize(value, min_val=0.4, max_val=1.5)
 
 
+@torch.compile
 class SmolVLAPolicy(PreTrainedPolicy):
     """Wrapper class around VLAFlowMatching model to train and run inference within LeRobot."""
 
@@ -526,6 +527,7 @@ def pad_tensor(tensor, max_len, pad_value=0):
     return padded_tensor
 
 
+@torch.compile
 class VLAFlowMatching(nn.Module):
     """
     SmolVLA
