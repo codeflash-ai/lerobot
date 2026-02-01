@@ -284,11 +284,44 @@ class FeetechMotorsBus(SerialMotorsBus):
         On Feetech Motors:
         Present_Position = Actual_Position - Homing_Offset
         """
+        if not positions:
+            return {}
+
+        # Check the key type only once to avoid per-item isinstance calls in the common uniform-key case
+        try:
+            first_key = next(iter(positions))
+        except StopIteration:
+            return {}
+
+        res_tbl = self.model_resolution_table
+
+        if isinstance(first_key, int):
+            # All keys are expected to be integer IDs -> use id->model mapping
+            id_to_model = self._id_to_model_dict
+            half_turn_homings: dict[NameOrID, Value] = {}
+            for motor, pos in positions.items():
+                model = id_to_model[motor]
+                max_res = res_tbl[model] - 1
+                half_turn_homings[motor] = pos - (max_res // 2)
+            return half_turn_homings
+
+        if isinstance(first_key, str):
+            # All keys are expected to be motor names -> use self.motors lookup
+            motors_map = self.motors
+            half_turn_homings = {}
+            for motor, pos in positions.items():
+                model = motors_map[motor].model
+                max_res = res_tbl[model] - 1
+                half_turn_homings[motor] = pos - (max_res // 2)
+            return half_turn_homings
+
+        # Mixed or unexpected key types: fallback to per-item resolution via helper
         half_turn_homings = {}
         for motor, pos in positions.items():
             model = self._get_motor_model(motor)
-            max_res = self.model_resolution_table[model] - 1
-            half_turn_homings[motor] = pos - int(max_res / 2)
+            max_res = res_tbl[model] - 1
+            half_turn_homings[motor] = pos - (max_res // 2)
+
 
         return half_turn_homings
 
