@@ -17,7 +17,7 @@ from copy import deepcopy
 from enum import Enum
 from pprint import pformat
 
-from ..encoding_utils import decode_sign_magnitude, encode_sign_magnitude
+from ..encoding_utils import encode_sign_magnitude
 from ..motors_bus import Motor, MotorCalibration, NameOrID, SerialMotorsBus, Value, get_address
 from .tables import (
     FIRMWARE_MAJOR_VERSION,
@@ -319,12 +319,22 @@ class FeetechMotorsBus(SerialMotorsBus):
         return ids_values
 
     def _decode_sign(self, data_name: str, ids_values: dict[int, int]) -> dict[int, int]:
+        # Cache local references to avoid attribute lookups in the hot loop.
+        model_encoding_table = self.model_encoding_table
+        id_to_model_map = self._id_to_model_dict
+
         for id_ in ids_values:
-            model = self._id_to_model(id_)
-            encoding_table = self.model_encoding_table.get(model)
-            if encoding_table and data_name in encoding_table:
-                sign_bit = encoding_table[data_name]
-                ids_values[id_] = decode_sign_magnitude(ids_values[id_], sign_bit)
+            # direct dict access (faster than a method call)
+            model = id_to_model_map[id_]
+            encoding_table = model_encoding_table.get(model)
+            if encoding_table:
+                # use .get to retrieve sign_bit and avoid an extra "in" check
+                sign_bit = encoding_table.get(data_name)
+                if sign_bit is not None:
+                    v = ids_values[id_]
+                    # inline sign-magnitude decoding to avoid function call overhead
+                    ids_values[id_] = - (v & ((1 << sign_bit) - 1)) if ((v >> sign_bit) & 1) else (v & ((1 << sign_bit) - 1))
+
 
         return ids_values
 
