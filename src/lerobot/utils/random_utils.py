@@ -26,6 +26,8 @@ from safetensors.torch import load_file, save_file
 from lerobot.datasets.utils import flatten_dict, unflatten_dict
 from lerobot.utils.constants import RNG_STATE
 
+_CUDA_AVAILABLE = torch.cuda.is_available()
+
 
 def serialize_python_rng_state() -> dict[str, torch.Tensor]:
     """
@@ -83,7 +85,7 @@ def serialize_torch_rng_state() -> dict[str, torch.Tensor]:
     `safetensors.save_file()` or `torch.save()`.
     """
     torch_rng_state_dict = {"torch_rng_state": torch.get_rng_state()}
-    if torch.cuda.is_available():
+    if _CUDA_AVAILABLE:
         torch_rng_state_dict["torch_cuda_rng_state"] = torch.cuda.get_rng_state()
     return torch_rng_state_dict
 
