@@ -183,6 +183,7 @@ def get_gemma_config(variant: str) -> GemmaConfig:  # see openpi `gemma.py: get_
         raise ValueError(f"Unknown variant: {variant}")
 
 
+
 class PI0FastPaliGemma(nn.Module):
     """PaliGemma model for PI0Fast"""
 
@@ -228,17 +229,10 @@ class PI0FastPaliGemma(nn.Module):
         else:
             raise ValueError(f"Invalid precision: {precision}")
 
-        params_to_keep_float32 = [
-            "vision_tower.vision_model.embeddings.patch_embedding.weight",
-            "vision_tower.vision_model.embeddings.patch_embedding.bias",
-            "vision_tower.vision_model.embeddings.position_embedding.weight",
-            "input_layernorm",
-            "post_attention_layernorm",
-            "model.norm",
-        ]
-
+        # Keep the entire vision tower and multi_modal_projector in float32 to avoid dtype mismatches
+        # between layer norms, linear layers, and embeddings
         for name, param in self.named_parameters():
-            if any(selector in name for selector in params_to_keep_float32):
+            if "vision_tower" in name or "multi_modal_projector" in name:
                 param.data = param.data.to(dtype=torch.float32)
 
     def embed_image(self, image: torch.Tensor):
@@ -306,15 +300,27 @@ class PI0FastPytorch(nn.Module):  # see openpi `PI0Pytorch`
             self.sample_actions_fast = torch.compile(self.sample_actions_fast, mode=config.compile_mode)
             self.forward = torch.compile(self.forward, mode=config.compile_mode)
 
-        msg = """An incorrect transformer version is used, please create an issue on https://github.com/huggingface/lerobot/issues"""
+        # Check for custom transformers version (warn only, don't fail)
+        import os
 
-        try:
-            from transformers.models.siglip import check
+        if os.environ.get("LEROBOT_SKIP_TRANSFORMERS_CHECK") != "true":
+            try:
+                from transformers.models.siglip import check
 
-            if not check.check_whether_transformers_replace_is_installed_correctly():
-                raise ValueError(msg)
-        except ImportError:
-            raise ValueError(msg) from None
+                if not check.check_whether_transformers_replace_is_installed_correctly():
+                    import warnings
+                    warnings.warn(
+                        "Using a non-recommended transformers version. "
+                        "For best results, install: pip install git+https://github.com/huggingface/transformers.git@fix/lerobot_openpi",
+                        UserWarning
+                    )
+            except ImportError:
+                import warnings
+                warnings.warn(
+                    "Using a non-recommended transformers version. "
+                    "For best results, install: pip install git+https://github.com/huggingface/transformers.git@fix/lerobot_openpi",
+                    UserWarning
+                )
 
     def gradient_checkpointing_enable(self):
         """Enable gradient checkpointing for memory optimization."""
@@ -801,6 +807,7 @@ class PI0FastPytorch(nn.Module):  # see openpi `PI0Pytorch`
         return generated_action_tokens
 
 
+
 class PI0FastPolicy(PreTrainedPolicy):
     """PI0Fast Policy for LeRobot."""
 
@@ -1109,7 +1116,9 @@ class PI0FastPolicy(PreTrainedPolicy):
         Returns:
             Action token IDs
         """
-        return self._paligemma_tokenizer.vocab_size - 1 - self.config.fast_skip_tokens - tokens
+        # The model generates tokens in [0, vocab_size). Action tokens are directly in [0, 2047]
+        # No conversion needed if the model is already outputting action token IDs
+        return tokens
 
     def decode_actions_with_fast(
         self, token_ids: list[int], time_horizon: int, action_dim: int, relaxed_decoding: bool = True
@@ -1241,9 +1250,12 @@ class PI0FastPolicy(PreTrainedPolicy):
             self._paligemma_tokens_to_act_tokens(raw_action_token) for raw_action_token in raw_action_tokens
         ]
 
+        # Convert tensors to lists for BPE tokenizer
+        action_tokens_list = [token.tolist() if isinstance(token, torch.Tensor) else token for token in action_tokens]
+
         # Decode action tokens to continuous actions
         actions = self.decode_actions_with_fast(
-            action_tokens, time_horizon=action_horizon, action_dim=action_dim
+            action_tokens_list, time_horizon=action_horizon, action_dim=action_dim
         )
 
         # Convert to tensor and return

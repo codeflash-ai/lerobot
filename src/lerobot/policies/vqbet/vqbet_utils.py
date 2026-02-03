@@ -85,12 +85,14 @@ This is a part for nanoGPT that utilizes code from the following repository:
             - n_layer -> gpt_n_layer
 
 
+        
         class GPT(nn.Module):
             - removed unused functions `def generate`, `def estimate_mfu`, and `def from_pretrained`
             - changed the `configure_optimizers` to `def configure_parameters` and made it to return only the parameters of the model: we use an external optimizer in our training loop.
             - in the function `forward`, we removed target loss calculation parts, since it will be calculated in the training loop (after passing through bin prediction and offset prediction heads).
 
 """
+
 
 
 class CausalSelfAttention(nn.Module):
@@ -138,6 +140,7 @@ class CausalSelfAttention(nn.Module):
         # output projection
         y = self.resid_dropout(self.c_proj(y))
         return y
+
 
 
 class Block(nn.Module):
@@ -305,12 +308,14 @@ This file is a part for Residual Vector Quantization that utilizes code from the
 
     - We've made some changes to the original code to adapt it to our needs.
 
+        
         class ResidualVQ(nn.Module):
             - added `self.register_buffer('freeze_codebook', torch.tensor(False))` to the __init__ method:
                 This enables the user to save an indicator whether the codebook is frozen or not.
             - changed the name of function `get_codes_from_indices` → `get_codebook_vector_from_indices`:
                 This is to make the function name more descriptive.
 
+        
         class VectorQuantize(nn.Module):
             - removed the `use_cosine_sim` and `layernorm_after_project_in` parameters from the __init__ method:
                 These parameters are not used in the code.
@@ -1149,6 +1154,7 @@ def orthogonal_loss_fn(t):
     normed_codes = F.normalize(t, p=2, dim=-1)
     cosine_sim = einsum("h i d, h j d -> h i j", normed_codes, normed_codes)
     return (cosine_sim**2).sum() / (h * n**2) - (1 / n)
+
 
 
 class EuclideanCodebook(nn.Module):

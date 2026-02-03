@@ -36,6 +36,7 @@ from lerobot.utils.constants import ACTION, OBS_IMAGES, OBS_STATE
 # ruff: noqa: N806
 
 
+
 class VQBeTPolicy(PreTrainedPolicy):
     """
     VQ-BeT Policy as per "Behavior Generation with Latent Actions"
@@ -179,6 +180,7 @@ class VQBeTPolicy(PreTrainedPolicy):
         return loss, loss_dict
 
 
+
 class SpatialSoftmax(nn.Module):
     """
     Spatial Soft Argmax operation described in "Deep Spatial Autoencoders for Visuomotor Learning" by Finn et al.
@@ -248,6 +250,7 @@ class SpatialSoftmax(nn.Module):
         feature_keypoints = expected_xy.view(-1, self._out_c, 2)
 
         return feature_keypoints
+
 
 
 class VQBeTModel(nn.Module):
@@ -400,6 +403,7 @@ class VQBeTModel(nn.Module):
             output = batch[ACTION][:, self.select_target_actions_indices]
             loss = self.action_head.loss_fn(action_head_output, output, reduction="mean")
             return action_head_output, loss
+
 
 
 class VQBeTHead(nn.Module):
@@ -645,6 +649,7 @@ class VQBeTHead(nn.Module):
         return loss_dict
 
 
+
 class VQBeTRgbEncoder(nn.Module):
     """Encode an RGB image into a 1D feature vector.
 
@@ -857,6 +862,7 @@ class VqVae(nn.Module):
             rep_loss.item(),
         )
         return rep_loss, metric
+
 
 
 class FocalLoss(nn.Module):

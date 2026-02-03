@@ -58,6 +58,7 @@ def get_intermediate_size(hidden_dim, ffn_dim_multiplier=4, multiple_of=256):
     return hidden_dim
 
 
+
 class SmolVLMWithExpertModel(nn.Module):
     def __init__(
         self,

@@ -44,6 +44,7 @@ from lerobot.policies.utils import (
 from lerobot.utils.constants import ACTION, OBS_ENV_STATE, OBS_IMAGES, OBS_STATE
 
 
+
 class DiffusionPolicy(PreTrainedPolicy):
     """
     Diffusion Policy as per "Diffusion Policy: Visuomotor Policy Learning via Action Diffusion"
@@ -366,6 +367,7 @@ class DiffusionModel(nn.Module):
         return loss.mean()
 
 
+
 class SpatialSoftmax(nn.Module):
     """
     Spatial Soft Argmax operation described in "Deep Spatial Autoencoders for Visuomotor Learning" by Finn et al.
@@ -435,6 +437,7 @@ class SpatialSoftmax(nn.Module):
         feature_keypoints = expected_xy.view(-1, self._out_c, 2)
 
         return feature_keypoints
+
 
 
 class DiffusionRgbEncoder(nn.Module):
@@ -546,6 +549,7 @@ def _replace_submodules(
     return root_module
 
 
+
 class DiffusionSinusoidalPosEmb(nn.Module):
     """1D sinusoidal positional embeddings as in Attention is All You Need."""
 
@@ -563,6 +567,7 @@ class DiffusionSinusoidalPosEmb(nn.Module):
         return emb
 
 
+
 class DiffusionConv1dBlock(nn.Module):
     """Conv1d --> GroupNorm --> Mish"""
 
@@ -577,6 +582,7 @@ class DiffusionConv1dBlock(nn.Module):
 
     def forward(self, x):
         return self.block(x)
+
 
 
 class DiffusionConditionalUnet1d(nn.Module):
@@ -704,6 +710,7 @@ class DiffusionConditionalUnet1d(nn.Module):
 
         x = einops.rearrange(x, "b d t -> b t d")
         return x
+
 
 
 class DiffusionConditionalResidualBlock1d(nn.Module):

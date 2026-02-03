@@ -52,6 +52,7 @@ DEFAULT_VENDOR_EAGLE_PATH = str((Path(__file__).resolve().parent / "eagle2_hg_mo
 DEFAULT_TOKENIZER_ASSETS_REPO = "lerobot/eagle2hg-processor-groot-n1p5"
 
 
+
 class EagleBackbone(nn.Module):
     def __init__(
         self,
@@ -192,6 +193,7 @@ class GR00TN15Config(PretrainedConfig):
 
 
 # real model
+
 class GR00TN15(PreTrainedModel):
     supports_gradient_checkpointing = True
     config_class = GR00TN15Config

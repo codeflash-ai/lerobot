@@ -222,6 +222,7 @@ def aloha_gripper_from_angular_inv(value):
     return normalize(value, min_val=0.4, max_val=1.5)
 
 
+
 class SmolVLAPolicy(PreTrainedPolicy):
     """Wrapper class around VLAFlowMatching model to train and run inference within LeRobot."""
 
@@ -524,6 +525,7 @@ def pad_tensor(tensor, max_len, pad_value=0):
     padded_tensor[:, :d] = tensor  # Efficient in-place copy
 
     return padded_tensor
+
 
 
 class VLAFlowMatching(nn.Module):

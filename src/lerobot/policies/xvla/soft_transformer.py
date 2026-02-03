@@ -44,6 +44,7 @@ def _has_sdp_attention() -> bool:
 # ---------------------------------- MLP --------------------------------------
 
 
+
 class Mlp(nn.Module):
     """
     MLP used in ViT-style blocks.
@@ -87,6 +88,7 @@ class Mlp(nn.Module):
 
 
 # -------------------------------- Attention ----------------------------------
+
 
 
 class Attention(nn.Module):
@@ -212,6 +214,7 @@ def timestep_embedding(t: torch.Tensor, dim: int, max_period: int = 100) -> torc
 # ------------------------------- Core Layers ----------------------------------
 
 
+
 class DomainAwareLinear(nn.Module):
     """
     Linear layer with domain-conditioned parameters (per-sample).
@@ -255,6 +258,7 @@ class DomainAwareLinear(nn.Module):
         return y
 
 
+
 class TransformerBlock(nn.Module):
     """
     Standard Transformer block (pre-LN): LN → MHSA → residual, LN → MLP → residual.
@@ -287,6 +291,7 @@ class TransformerBlock(nn.Module):
 
 
 # --------------------------- Main Model ---------------------------------------
+
 
 
 class SoftPromptedTransformer(nn.Module):

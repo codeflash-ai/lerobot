@@ -26,6 +26,7 @@ from torchvision.transforms.v2 import (
 )
 
 
+
 class RandomSubsetApply(Transform):
     """Apply a random subset of N transformations from a list of transformations.
 
@@ -226,6 +227,7 @@ def make_transform_from_config(cfg: ImageTransformConfig):
         return v2.RandomAffine(**cfg.kwargs)
     else:
         raise ValueError(f"Transform '{cfg.type}' is not valid.")
+
 
 
 class ImageTransforms(Transform):

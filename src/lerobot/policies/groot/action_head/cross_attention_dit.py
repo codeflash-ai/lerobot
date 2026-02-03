@@ -27,6 +27,7 @@ from diffusers.models.embeddings import (
 from torch import nn
 
 
+
 class TimestepEncoder(nn.Module):
     def __init__(self, embedding_dim, compute_dtype=torch.float32):
         super().__init__()
@@ -38,6 +39,7 @@ class TimestepEncoder(nn.Module):
         timesteps_proj = self.time_proj(timesteps).to(dtype)
         timesteps_emb = self.timestep_embedder(timesteps_proj)  # (N, D)
         return timesteps_emb
+
 
 
 class AdaLayerNorm(nn.Module):
@@ -64,6 +66,7 @@ class AdaLayerNorm(nn.Module):
         scale, shift = temb.chunk(2, dim=1)
         x = self.norm(x) * (1 + scale[:, None]) + shift[:, None]
         return x
+
 
 
 class BasicTransformerBlock(nn.Module):
@@ -184,6 +187,7 @@ class BasicTransformerBlock(nn.Module):
         return hidden_states
 
 
+
 class DiT(ModelMixin, ConfigMixin):
     _supports_gradient_checkpointing = True
 
@@ -299,6 +303,7 @@ class DiT(ModelMixin, ConfigMixin):
             return self.proj_out_2(hidden_states), all_hidden_states
         else:
             return self.proj_out_2(hidden_states)
+
 
 
 class SelfAttentionTransformer(ModelMixin, ConfigMixin):

@@ -38,6 +38,7 @@ from lerobot.policies.pretrained import PreTrainedPolicy
 from lerobot.utils.constants import ACTION, OBS_ENV_STATE, OBS_IMAGES, OBS_STATE
 
 
+
 class ACTPolicy(PreTrainedPolicy):
     """
     Action Chunking Transformer Policy as per Learning Fine-Grained Bimanual Manipulation with Low-Cost
@@ -251,6 +252,7 @@ class ACTTemporalEnsembler:
             self.ensembled_actions_count[1:],
         )
         return action
+
 
 
 class ACT(nn.Module):
@@ -510,6 +512,7 @@ class ACT(nn.Module):
         return actions, (mu, log_sigma_x2)
 
 
+
 class ACTEncoder(nn.Module):
     """Convenience module for running multiple encoder layers, maybe followed by normalization."""
 
@@ -527,6 +530,7 @@ class ACTEncoder(nn.Module):
             x = layer(x, pos_embed=pos_embed, key_padding_mask=key_padding_mask)
         x = self.norm(x)
         return x
+
 
 
 class ACTEncoderLayer(nn.Module):
@@ -568,6 +572,7 @@ class ACTEncoderLayer(nn.Module):
         return x
 
 
+
 class ACTDecoder(nn.Module):
     def __init__(self, config: ACTConfig):
         """Convenience module for running multiple decoder layers followed by normalization."""
@@ -589,6 +594,7 @@ class ACTDecoder(nn.Module):
         if self.norm is not None:
             x = self.norm(x)
         return x
+
 
 
 class ACTDecoderLayer(nn.Module):
@@ -679,6 +685,7 @@ def create_sinusoidal_pos_embedding(num_positions: int, dimension: int) -> Tenso
     sinusoid_table[:, 0::2] = np.sin(sinusoid_table[:, 0::2])  # dim 2i
     sinusoid_table[:, 1::2] = np.cos(sinusoid_table[:, 1::2])  # dim 2i+1
     return torch.from_numpy(sinusoid_table).float()
+
 
 
 class ACTSinusoidalPositionEmbedding2d(nn.Module):

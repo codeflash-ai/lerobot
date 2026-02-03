@@ -36,6 +36,7 @@ from lerobot.utils.constants import ACTION, OBS_ENV_STATE, OBS_STATE
 DISCRETE_DIMENSION_INDEX = -1  # Gripper is always the last dimension
 
 
+
 class SACPolicy(
     PreTrainedPolicy,
 ):
@@ -465,6 +466,7 @@ class SACPolicy(
         self.log_alpha = nn.Parameter(torch.tensor([math.log(temp_init)]))
 
 
+
 class SACObservationEncoder(nn.Module):
     """Encode image and/or state vector observations."""
 
@@ -619,6 +621,7 @@ class SACObservationEncoder(nn.Module):
         return self._out_dim
 
 
+
 class MLP(nn.Module):
     """Multi-layer perceptron builder.
 
@@ -676,6 +679,7 @@ class MLP(nn.Module):
         return self.net(x)
 
 
+
 class CriticHead(nn.Module):
     def __init__(
         self,
@@ -705,6 +709,7 @@ class CriticHead(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.output_layer(self.net(x))
+
 
 
 class CriticEnsemble(nn.Module):
@@ -754,6 +759,7 @@ class CriticEnsemble(nn.Module):
         return q_values
 
 
+
 class DiscreteCritic(nn.Module):
     def __init__(
         self,
@@ -794,6 +800,7 @@ class DiscreteCritic(nn.Module):
         observations = {k: v.to(device) for k, v in observations.items()}
         obs_enc = self.encoder(observations, cache=observation_features)
         return self.output_layer(self.net(obs_enc))
+
 
 
 class Policy(nn.Module):
@@ -883,6 +890,7 @@ class Policy(nn.Module):
         return observations
 
 
+
 class DefaultImageEncoder(nn.Module):
     def __init__(self, config: SACConfig):
         super().__init__()
@@ -929,6 +937,7 @@ def freeze_image_encoder(image_encoder: nn.Module):
         param.requires_grad = False
 
 
+
 class PretrainedImageEncoder(nn.Module):
     def __init__(self, config: SACConfig):
         super().__init__()
@@ -956,6 +965,7 @@ class PretrainedImageEncoder(nn.Module):
 
 def orthogonal_init():
     return lambda x: torch.nn.init.orthogonal_(x, gain=1.0)
+
 
 
 class SpatialLearnedEmbeddings(nn.Module):

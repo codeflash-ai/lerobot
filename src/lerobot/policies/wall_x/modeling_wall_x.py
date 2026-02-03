@@ -89,6 +89,7 @@ from lerobot.utils.constants import ACTION, OBS_STATE
 logger = logging.get_logger(__name__)
 
 
+
 class SinusoidalPosEmb(nn.Module):
     """Sinusoidal positional embedding for diffusion timesteps."""
 
@@ -104,6 +105,7 @@ class SinusoidalPosEmb(nn.Module):
         emb = x[:, None] * emb[None, :]
         emb = torch.cat((emb.sin(), emb.cos()), dim=-1)
         return emb
+
 
 
 class ActionHead(nn.Module):
@@ -251,6 +253,7 @@ class ActionHead(nn.Module):
             dtype=self.propri_proj.weight.dtype
         )
         return self.propri_proj(proprioception)
+
 
 
 class Qwen2_5_VLMoEForAction(Qwen2_5_VLForConditionalGeneration):
@@ -1684,6 +1687,7 @@ class Qwen2_5_VLMoEForAction(Qwen2_5_VLForConditionalGeneration):
             model_kwargs["encoder_outputs"] = _expand_dict_for_generation(model_kwargs["encoder_outputs"])
 
         return input_ids, model_kwargs
+
 
 
 class WallXPolicy(PreTrainedPolicy):

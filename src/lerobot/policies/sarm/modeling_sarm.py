@@ -43,6 +43,7 @@ from lerobot.policies.sarm.sarm_utils import (
 from lerobot.utils.constants import OBS_STR
 
 
+
 class StageTransformer(nn.Module):
     """
     Stage classification transformer for SARM.
@@ -178,6 +179,7 @@ class StageTransformer(nn.Module):
         # Scheme-specific logits
         logits = self.heads[scheme](fused)  # (B, T, num_classes)
         return logits
+
 
 
 class SubtaskTransformer(nn.Module):
@@ -350,6 +352,7 @@ def gen_stage_emb(num_classes: int, targets: torch.Tensor) -> torch.Tensor:
     stage_onehot = torch.eye(C, device=targets.device)[idx]  # (B, T, C)
     stage_onehot = stage_onehot.unsqueeze(1)  # (B, 1, T, C)
     return stage_onehot
+
 
 
 class SARMRewardModel(PreTrainedPolicy):

@@ -21,6 +21,7 @@ def swish(x):
     return x * torch.sigmoid(x)
 
 
+
 class SinusoidalPositionalEncoding(nn.Module):
     """
     Produces a sinusoidal encoding of shape (B, T, w)

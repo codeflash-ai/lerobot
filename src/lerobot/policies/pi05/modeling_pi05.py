@@ -325,6 +325,7 @@ def get_gemma_config(variant: str) -> GemmaConfig:  # see openpi `gemma.py: get_
         raise ValueError(f"Unknown variant: {variant}")
 
 
+
 class PaliGemmaWithExpertModel(
     nn.Module
 ):  # see openpi `gemma_pytorch.py: PaliGemmaWithExpertModel` this class is almost a exact copy of PaliGemmaWithExpertModel in openpi
@@ -531,6 +532,7 @@ class PaliGemmaWithExpertModel(
         return [prefix_output, suffix_output], prefix_past_key_values
 
 
+
 class PI05Pytorch(nn.Module):  # see openpi `PI0Pytorch`
     """Core PI05 PyTorch model."""
 
@@ -573,15 +575,27 @@ class PI05Pytorch(nn.Module):  # see openpi `PI0Pytorch`
             # Also compile the main forward pass used during training
             self.forward = torch.compile(self.forward, mode=config.compile_mode)
 
-        msg = """An incorrect transformer version is used, please create an issue on https://github.com/huggingface/lerobot/issues"""
+        # Check for custom transformers version (warn only, don't fail)
+        import os
 
-        try:
-            from transformers.models.siglip import check
+        if os.environ.get("LEROBOT_SKIP_TRANSFORMERS_CHECK") != "true":
+            try:
+                from transformers.models.siglip import check
 
-            if not check.check_whether_transformers_replace_is_installed_correctly():
-                raise ValueError(msg)
-        except ImportError:
-            raise ValueError(msg) from None
+                if not check.check_whether_transformers_replace_is_installed_correctly():
+                    import warnings
+                    warnings.warn(
+                        "Using a non-recommended transformers version. "
+                        "For best results, install: pip install git+https://github.com/huggingface/transformers.git@fix/lerobot_openpi",
+                        UserWarning
+                    )
+            except ImportError:
+                import warnings
+                warnings.warn(
+                    "Using a non-recommended transformers version. "
+                    "For best results, install: pip install git+https://github.com/huggingface/transformers.git@fix/lerobot_openpi",
+                    UserWarning
+                )
 
     def gradient_checkpointing_enable(self):
         """Enable gradient checkpointing for memory optimization."""
@@ -893,6 +907,7 @@ class PI05Pytorch(nn.Module):  # see openpi `PI0Pytorch`
         suffix_out = suffix_out[:, -self.config.chunk_size :]
         suffix_out = suffix_out.to(dtype=torch.float32)
         return self.action_out_proj(suffix_out)
+
 
 
 class PI05Policy(PreTrainedPolicy):

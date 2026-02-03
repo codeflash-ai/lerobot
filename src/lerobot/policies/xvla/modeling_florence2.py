@@ -62,6 +62,7 @@ logger = logging.get_logger(__name__)
 _CONFIG_FOR_DOC = "Florence2Config"
 
 
+
 class DropPath(nn.Module):
     """Drop paths (Stochastic Depth) per sample  (when applied in main path of residual blocks)."""
 
@@ -75,6 +76,7 @@ class DropPath(nn.Module):
 
     def extra_repr(self):
         return f"drop_prob={round(self.drop_prob, 3):0.3f}"
+
 
 
 class LearnedAbsolutePositionEmbedding2D(nn.Module):
@@ -111,6 +113,7 @@ class LearnedAbsolutePositionEmbedding2D(nn.Module):
         # (batch_size, height, width, embedding_dim * 2)
         pos = pos.permute(0, 2, 3, 1)
         return pos
+
 
 
 class PositionalEmbeddingCosine1D(nn.Module):
@@ -165,6 +168,7 @@ class PositionalEmbeddingCosine1D(nn.Module):
         return pos_embeds
 
 
+
 class LearnedAbsolutePositionEmbedding1D(nn.Module):
     """
     Learnable absolute positional embeddings for 1D sequences.
@@ -203,11 +207,13 @@ class LearnedAbsolutePositionEmbedding1D(nn.Module):
         return pos_embeds
 
 
+
 class MySequential(nn.Sequential):
     def forward(self, *inputs):
         for module in self._modules.values():
             inputs = module(*inputs) if isinstance(inputs, tuple) else module(inputs)
         return inputs
+
 
 
 class PreNorm(nn.Module):
@@ -230,6 +236,7 @@ class PreNorm(nn.Module):
         x = shortcut + x
 
         return x, size
+
 
 
 class Mlp(nn.Module):
@@ -257,6 +264,7 @@ class Mlp(nn.Module):
         return self.net(x), size
 
 
+
 class DepthWiseConv2d(nn.Module):
     def __init__(
         self,
@@ -280,6 +288,7 @@ class DepthWiseConv2d(nn.Module):
         size = (x.size(-2), x.size(-1))
         x = x.flatten(2).transpose(1, 2)
         return x, size
+
 
 
 class ConvEmbed(nn.Module):
@@ -315,6 +324,7 @@ class ConvEmbed(nn.Module):
         return x, (height, width)
 
 
+
 class ChannelAttention(nn.Module):
     def __init__(self, dim, groups=8, qkv_bias=True):
         super().__init__()
@@ -340,6 +350,7 @@ class ChannelAttention(nn.Module):
         x = x.transpose(1, 2).reshape(batch_size, num_tokens, channels)
         x = self.proj(x)
         return x, size
+
 
 
 class ChannelBlock(nn.Module):
@@ -395,6 +406,7 @@ def window_reverse(windows, batch_size: int, window_size: int, height: int, widt
     x = windows.view(batch_size, height // window_size, width // window_size, window_size, window_size, -1)
     x = x.permute(0, 1, 3, 2, 4, 5).contiguous().view(batch_size, height, width, -1)
     return x
+
 
 
 class WindowAttention(nn.Module):
@@ -457,6 +469,7 @@ class WindowAttention(nn.Module):
         return x, size
 
 
+
 class SpatialBlock(nn.Module):
     def __init__(
         self,
@@ -495,6 +508,7 @@ class SpatialBlock(nn.Module):
             x, size = self.conv2(x, size)
         x, size = self.ffn(x, size)
         return x, size
+
 
 
 class DaViT(nn.Module):
@@ -695,6 +709,7 @@ def shift_tokens_right(input_ids: torch.Tensor, pad_token_id: int, decoder_start
     return shifted_input_ids
 
 
+
 class Florence2LearnedPositionalEmbedding(nn.Embedding):
     """
     This module learns positional embeddings up to a fixed maximum size.
@@ -720,6 +735,7 @@ class Florence2LearnedPositionalEmbedding(nn.Embedding):
         return super().forward(positions + self.offset)
 
 
+
 class Florence2ScaledWordEmbedding(nn.Embedding):
     """
     This module overrides nn.Embeddings' forward by multiplying with embeddings scale.
@@ -733,6 +749,7 @@ class Florence2ScaledWordEmbedding(nn.Embedding):
 
     def forward(self, input_ids: torch.Tensor):
         return super().forward(input_ids) * self.embed_scale
+
 
 
 class Florence2Attention(nn.Module):
@@ -893,6 +910,7 @@ class Florence2Attention(nn.Module):
         attn_output = self.out_proj(attn_output)
 
         return attn_output, attn_weights_reshaped, past_key_value
+
 
 
 class Florence2FlashAttention2(Florence2Attention):
@@ -1123,6 +1141,7 @@ class Florence2FlashAttention2(Florence2Attention):
         )
 
 
+
 class Florence2SdpaAttention(Florence2Attention):
     def forward(
         self,
@@ -1236,6 +1255,7 @@ FLORENCE2_ATTENTION_CLASSES = {
 }
 
 
+
 class Florence2EncoderLayer(nn.Module):
     def __init__(self, config: Florence2LanguageConfig):
         super().__init__()
@@ -1306,6 +1326,7 @@ class Florence2EncoderLayer(nn.Module):
             outputs += (attn_weights,)
 
         return outputs
+
 
 
 class Florence2DecoderLayer(nn.Module):
@@ -1468,6 +1489,7 @@ class Florence2LanguagePreTrainedModel(PreTrainedModel):
             "input_ids": input_ids,
         }
         return dummy_inputs
+
 
 
 class Florence2Encoder(Florence2LanguagePreTrainedModel):
@@ -1657,6 +1679,7 @@ class Florence2Encoder(Florence2LanguagePreTrainedModel):
         return BaseModelOutput(
             last_hidden_state=hidden_states, hidden_states=encoder_states, attentions=all_attentions
         )
+
 
 
 class Florence2Decoder(Florence2LanguagePreTrainedModel):
@@ -1950,6 +1973,7 @@ class Florence2Decoder(Florence2LanguagePreTrainedModel):
         )
 
 
+
 class Florence2LanguageModel(Florence2LanguagePreTrainedModel):
     _tied_weights_keys = ["encoder.embed_tokens.weight", "decoder.embed_tokens.weight"]
 
@@ -2072,6 +2096,7 @@ class Florence2LanguageModel(Florence2LanguagePreTrainedModel):
             encoder_hidden_states=encoder_outputs.hidden_states,
             encoder_attentions=encoder_outputs.attentions,
         )
+
 
 
 class Florence2LanguageForConditionalGeneration(Florence2LanguagePreTrainedModel, GenerationMixin):
@@ -2435,6 +2460,7 @@ FLORENCE2_INPUTS_DOCSTRING = r"""
     """The FLORENCE2 model which consists of a vision backbone and a language model.""",
     FLORENCE2_START_DOCSTRING,
 )
+
 class Florence2ForConditionalGeneration(Florence2PreTrainedModel):
     _tied_weights_keys = [
         "language_model.encoder.embed_tokens.weight",

@@ -40,6 +40,7 @@ from .modeling_florence2 import Florence2ForConditionalGeneration
 from .soft_transformer import SoftPromptedTransformer
 
 
+
 class XVLAModel(nn.Module):
     """
     XVLA backbone that stitches Florence-2 embeddings with the temporal/action transformer head.
@@ -265,6 +266,7 @@ class XVLAModel(nn.Module):
                 **enc,
             )
         return self.action_space.postprocess(action)
+
 
 
 class XVLAPolicy(PreTrainedPolicy):

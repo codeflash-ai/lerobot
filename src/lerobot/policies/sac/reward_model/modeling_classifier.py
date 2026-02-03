@@ -45,6 +45,7 @@ class ClassifierOutput:
         )
 
 
+
 class SpatialLearnedEmbeddings(nn.Module):
     def __init__(self, height, width, channel, num_features=8):
         """
@@ -96,6 +97,7 @@ class SpatialLearnedEmbeddings(nn.Module):
             output = output.squeeze(0)
 
         return output
+
 
 
 class Classifier(PreTrainedPolicy):
