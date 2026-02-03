@@ -36,7 +36,6 @@ from datasets.table import embed_table_storage
 from huggingface_hub import DatasetCard, DatasetCardData, HfApi
 from huggingface_hub.errors import RevisionNotFoundError
 from PIL import Image as PILImage
-from torchvision import transforms
 
 from lerobot.configs.types import FeatureType, PolicyFeature
 from lerobot.datasets.backward_compatibility import (
@@ -435,12 +434,13 @@ def hf_transform_to_torch(items_dict: dict[str, list[Any]]) -> dict[str, list[to
     for key in items_dict:
         first_item = items_dict[key][0]
         if isinstance(first_item, PILImage.Image):
-            to_tensor = transforms.ToTensor()
-            items_dict[key] = [to_tensor(img) for img in items_dict[key]]
+            # Convert all PIL images in-place using a fast numpy -> torch path
+            items_dict[key] = [_pil_to_tensor(img) for img in items_dict[key]]
         elif first_item is None:
             pass
         else:
-            items_dict[key] = [x if isinstance(x, str) else torch.tensor(x) for x in items_dict[key]]
+            # Preserve strings, otherwise convert to torch tensors.
+            items_dict[key] = [x if isinstance(x, str) else torch.as_tensor(x) for x in items_dict[key]]
     return items_dict
 
 
@@ -1392,3 +1392,56 @@ def safe_shard(dataset: datasets.IterableDataset, index: int, num_shards: int) -
     shard_idx = min(dataset.num_shards, index + 1) - 1
 
     return dataset.shard(num_shards, index=shard_idx)
+
+
+
+def _pil_to_tensor(img: PILImage.Image) -> torch.Tensor:
+    """
+    Convert a PIL Image to a torch tensor with shape (C, H, W) and dtype float32.
+    Matches torchvision.transforms.ToTensor behavior for common usages:
+    - uint8 arrays are converted to float32 and scaled to [0, 1] by dividing by 255.
+    - other numeric types are converted to float32 without scaling.
+    """
+    # Convert to ndarray (no copy when possible)
+    arr = np.asarray(img)
+    # Ensure shape is H, W, C
+    if arr.ndim == 2:
+        # Grayscale H x W -> H x W x 1
+        arr = arr[:, :, None]
+    # Now arr.ndim == 3 (H, W, C)
+    # Transpose to (C, H, W)
+    arr = np.ascontiguousarray(arr.transpose((2, 0, 1)))
+    # Convert to torch tensor
+    if arr.dtype == np.uint8:
+        # common case: scale to [0,1] float32
+        t = torch.from_numpy(arr.astype(np.float32, copy=False)).div(255.0)
+    else:
+        # preserve numeric values but convert to float32 to match ToTensor output type
+        t = torch.from_numpy(arr.astype(np.float32, copy=False))
+    return t
+
+
+def _pil_to_tensor(img: PILImage.Image) -> torch.Tensor:
+    """
+    Convert a PIL Image to a torch tensor with shape (C, H, W) and dtype float32.
+    Matches torchvision.transforms.ToTensor behavior for common usages:
+    - uint8 arrays are converted to float32 and scaled to [0, 1] by dividing by 255.
+    - other numeric types are converted to float32 without scaling.
+    """
+    # Convert to ndarray (no copy when possible)
+    arr = np.asarray(img)
+    # Ensure shape is H, W, C
+    if arr.ndim == 2:
+        # Grayscale H x W -> H x W x 1
+        arr = arr[:, :, None]
+    # Now arr.ndim == 3 (H, W, C)
+    # Transpose to (C, H, W)
+    arr = np.ascontiguousarray(arr.transpose((2, 0, 1)))
+    # Convert to torch tensor
+    if arr.dtype == np.uint8:
+        # common case: scale to [0,1] float32
+        t = torch.from_numpy(arr.astype(np.float32, copy=False)).div(255.0)
+    else:
+        # preserve numeric values but convert to float32 to match ToTensor output type
+        t = torch.from_numpy(arr.astype(np.float32, copy=False))
+    return t
