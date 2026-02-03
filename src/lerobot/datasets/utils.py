@@ -47,6 +47,8 @@ from lerobot.datasets.backward_compatibility import (
 from lerobot.utils.constants import ACTION, OBS_ENV_STATE, OBS_STR
 from lerobot.utils.utils import SuppressProgressBars, is_valid_numpy_dtype_string
 
+_cache: dict[str, bool] = {}
+
 DEFAULT_CHUNK_SIZE = 1000  # Max number of files per chunk
 DEFAULT_DATA_FILE_SIZE_IN_MB = 100  # Max size per file
 DEFAULT_VIDEO_FILE_SIZE_IN_MB = 200  # Max size per file
@@ -453,6 +455,20 @@ def is_valid_version(version: str) -> bool:
     Returns:
         bool: True if the version string is valid, False otherwise.
     """
+    # Only use the cache for string inputs to avoid changing exception behavior
+    # for non-str arguments (they will be validated directly as before).
+    if isinstance(version, str):
+        try:
+            return _cache[version]
+        except KeyError:
+            try:
+                packaging.version.parse(version)
+            except packaging.version.InvalidVersion:
+                _cache[version] = False
+            else:
+                _cache[version] = True
+            return _cache[version]
+    # Non-str inputs: preserve original behavior exactly.
     try:
         packaging.version.parse(version)
         return True
