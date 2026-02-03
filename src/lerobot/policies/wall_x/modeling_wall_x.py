@@ -89,7 +89,7 @@ from lerobot.utils.constants import ACTION, OBS_STATE
 logger = logging.get_logger(__name__)
 
 
-@torch.compile
+
 class SinusoidalPosEmb(nn.Module):
     """Sinusoidal positional embedding for diffusion timesteps."""
 
@@ -107,7 +107,7 @@ class SinusoidalPosEmb(nn.Module):
         return emb
 
 
-@torch.compile
+
 class ActionHead(nn.Module):
     """
     Action prediction head with flow matching.
@@ -255,7 +255,7 @@ class ActionHead(nn.Module):
         return self.propri_proj(proprioception)
 
 
-@torch.compile
+
 class Qwen2_5_VLMoEForAction(Qwen2_5_VLForConditionalGeneration):
     """
     Qwen2.5 Vision-Language Mixture of Experts model for action processing.
@@ -1689,7 +1689,7 @@ class Qwen2_5_VLMoEForAction(Qwen2_5_VLForConditionalGeneration):
         return input_ids, model_kwargs
 
 
-@torch.compile
+
 class WallXPolicy(PreTrainedPolicy):
     """
     Wall-X policy for cross-embodiment robotic control.

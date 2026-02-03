@@ -85,7 +85,7 @@ This is a part for nanoGPT that utilizes code from the following repository:
             - n_layer -> gpt_n_layer
 
 
-        @torch.compile
+        
         class GPT(nn.Module):
             - removed unused functions `def generate`, `def estimate_mfu`, and `def from_pretrained`
             - changed the `configure_optimizers` to `def configure_parameters` and made it to return only the parameters of the model: we use an external optimizer in our training loop.
@@ -94,7 +94,7 @@ This is a part for nanoGPT that utilizes code from the following repository:
 """
 
 
-@torch.compile
+
 class CausalSelfAttention(nn.Module):
     def __init__(self, config):
         super().__init__()
@@ -142,7 +142,7 @@ class CausalSelfAttention(nn.Module):
         return y
 
 
-@torch.compile
+
 class Block(nn.Module):
     # causual self-attention block for GPT
     def __init__(self, config):
@@ -308,14 +308,14 @@ This file is a part for Residual Vector Quantization that utilizes code from the
 
     - We've made some changes to the original code to adapt it to our needs.
 
-        @torch.compile
+        
         class ResidualVQ(nn.Module):
             - added `self.register_buffer('freeze_codebook', torch.tensor(False))` to the __init__ method:
                 This enables the user to save an indicator whether the codebook is frozen or not.
             - changed the name of function `get_codes_from_indices` → `get_codebook_vector_from_indices`:
                 This is to make the function name more descriptive.
 
-        @torch.compile
+        
         class VectorQuantize(nn.Module):
             - removed the `use_cosine_sim` and `layernorm_after_project_in` parameters from the __init__ method:
                 These parameters are not used in the code.
@@ -1156,7 +1156,7 @@ def orthogonal_loss_fn(t):
     return (cosine_sim**2).sum() / (h * n**2) - (1 / n)
 
 
-@torch.compile
+
 class EuclideanCodebook(nn.Module):
     def __init__(
         self,

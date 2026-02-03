@@ -327,7 +327,7 @@ def get_gemma_config(variant: str) -> GemmaConfig:  # see openpi `gemma.py: get_
         raise ValueError(f"Unknown variant: {variant}")
 
 
-@torch.compile
+
 class PaliGemmaWithExpertModel(
     nn.Module
 ):  # see openpi `gemma_pytorch.py: PaliGemmaWithExpertModel` this class is almost a exact copy of PaliGemmaWithExpertModel in openpi
@@ -534,7 +534,7 @@ class PaliGemmaWithExpertModel(
         return [prefix_output, suffix_output], prefix_past_key_values
 
 
-@torch.compile
+
 class PI0Pytorch(nn.Module):  # see openpi `PI0Pytorch`
     """Core PI0 PyTorch model."""
 
@@ -937,7 +937,7 @@ class PI0Pytorch(nn.Module):  # see openpi `PI0Pytorch`
         return self.action_out_proj(suffix_out)
 
 
-@torch.compile
+
 class PI0Policy(PreTrainedPolicy):
     """PI0 OpenPI Policy for LeRobot."""
 

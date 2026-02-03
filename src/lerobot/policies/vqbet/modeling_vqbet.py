@@ -36,7 +36,7 @@ from lerobot.utils.constants import ACTION, OBS_IMAGES, OBS_STATE
 # ruff: noqa: N806
 
 
-@torch.compile
+
 class VQBeTPolicy(PreTrainedPolicy):
     """
     VQ-BeT Policy as per "Behavior Generation with Latent Actions"
@@ -180,7 +180,7 @@ class VQBeTPolicy(PreTrainedPolicy):
         return loss, loss_dict
 
 
-@torch.compile
+
 class SpatialSoftmax(nn.Module):
     """
     Spatial Soft Argmax operation described in "Deep Spatial Autoencoders for Visuomotor Learning" by Finn et al.
@@ -252,7 +252,7 @@ class SpatialSoftmax(nn.Module):
         return feature_keypoints
 
 
-@torch.compile
+
 class VQBeTModel(nn.Module):
     """VQ-BeT: The underlying neural network for VQ-BeT
 
@@ -405,7 +405,7 @@ class VQBeTModel(nn.Module):
             return action_head_output, loss
 
 
-@torch.compile
+
 class VQBeTHead(nn.Module):
     def __init__(self, config: VQBeTConfig):
         """
@@ -649,7 +649,7 @@ class VQBeTHead(nn.Module):
         return loss_dict
 
 
-@torch.compile
+
 class VQBeTRgbEncoder(nn.Module):
     """Encode an RGB image into a 1D feature vector.
 
@@ -864,7 +864,7 @@ class VqVae(nn.Module):
         return rep_loss, metric
 
 
-@torch.compile
+
 class FocalLoss(nn.Module):
     """
     From https://github.com/notmahi/miniBET/blob/main/behavior_transformer/bet.py

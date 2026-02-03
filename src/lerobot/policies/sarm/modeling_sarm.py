@@ -43,7 +43,7 @@ from lerobot.policies.sarm.sarm_utils import (
 from lerobot.utils.constants import OBS_STR
 
 
-@torch.compile
+
 class StageTransformer(nn.Module):
     """
     Stage classification transformer for SARM.
@@ -181,7 +181,7 @@ class StageTransformer(nn.Module):
         return logits
 
 
-@torch.compile
+
 class SubtaskTransformer(nn.Module):
     """
     Subtask progress regression transformer for SARM.
@@ -354,7 +354,7 @@ def gen_stage_emb(num_classes: int, targets: torch.Tensor) -> torch.Tensor:
     return stage_onehot
 
 
-@torch.compile
+
 class SARMRewardModel(PreTrainedPolicy):
     """
     SARM Reward Model for stage-aware task completion rewards.

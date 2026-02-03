@@ -36,7 +36,7 @@ from lerobot.utils.constants import ACTION, OBS_ENV_STATE, OBS_STATE
 DISCRETE_DIMENSION_INDEX = -1  # Gripper is always the last dimension
 
 
-@torch.compile
+
 class SACPolicy(
     PreTrainedPolicy,
 ):
@@ -466,7 +466,7 @@ class SACPolicy(
         self.log_alpha = nn.Parameter(torch.tensor([math.log(temp_init)]))
 
 
-@torch.compile
+
 class SACObservationEncoder(nn.Module):
     """Encode image and/or state vector observations."""
 
@@ -621,7 +621,7 @@ class SACObservationEncoder(nn.Module):
         return self._out_dim
 
 
-@torch.compile
+
 class MLP(nn.Module):
     """Multi-layer perceptron builder.
 
@@ -679,7 +679,7 @@ class MLP(nn.Module):
         return self.net(x)
 
 
-@torch.compile
+
 class CriticHead(nn.Module):
     def __init__(
         self,
@@ -711,7 +711,7 @@ class CriticHead(nn.Module):
         return self.output_layer(self.net(x))
 
 
-@torch.compile
+
 class CriticEnsemble(nn.Module):
     """
     CriticEnsemble wraps multiple CriticHead modules into an ensemble.
@@ -759,7 +759,7 @@ class CriticEnsemble(nn.Module):
         return q_values
 
 
-@torch.compile
+
 class DiscreteCritic(nn.Module):
     def __init__(
         self,
@@ -802,7 +802,7 @@ class DiscreteCritic(nn.Module):
         return self.output_layer(self.net(obs_enc))
 
 
-@torch.compile
+
 class Policy(nn.Module):
     def __init__(
         self,
@@ -890,7 +890,7 @@ class Policy(nn.Module):
         return observations
 
 
-@torch.compile
+
 class DefaultImageEncoder(nn.Module):
     def __init__(self, config: SACConfig):
         super().__init__()
@@ -937,7 +937,7 @@ def freeze_image_encoder(image_encoder: nn.Module):
         param.requires_grad = False
 
 
-@torch.compile
+
 class PretrainedImageEncoder(nn.Module):
     def __init__(self, config: SACConfig):
         super().__init__()
@@ -967,7 +967,7 @@ def orthogonal_init():
     return lambda x: torch.nn.init.orthogonal_(x, gain=1.0)
 
 
-@torch.compile
+
 class SpatialLearnedEmbeddings(nn.Module):
     def __init__(self, height, width, channel, num_features=8):
         """

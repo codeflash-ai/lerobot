@@ -41,7 +41,7 @@ from lerobot.policies.utils import get_device_from_parameters, get_output_shape,
 from lerobot.utils.constants import ACTION, OBS_ENV_STATE, OBS_IMAGE, OBS_PREFIX, OBS_STATE, OBS_STR, REWARD
 
 
-@torch.compile
+
 class TDMPCPolicy(PreTrainedPolicy):
     """Implementation of TD-MPC learning + inference.
 
@@ -684,7 +684,7 @@ class TDMPCTOLD(nn.Module):
             return torch.stack([q(x).squeeze(-1) for q in Qs], dim=0).min(dim=0)[0]
 
 
-@torch.compile
+
 class TDMPCObservationEncoder(nn.Module):
     """Encode image and/or state vector observations."""
 

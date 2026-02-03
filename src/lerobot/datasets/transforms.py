@@ -26,7 +26,7 @@ from torchvision.transforms.v2 import (
 )
 
 
-@torch.compile
+
 class RandomSubsetApply(Transform):
     """Apply a random subset of N transformations from a list of transformations.
 
@@ -229,7 +229,7 @@ def make_transform_from_config(cfg: ImageTransformConfig):
         raise ValueError(f"Transform '{cfg.type}' is not valid.")
 
 
-@torch.compile
+
 class ImageTransforms(Transform):
     """A class to compose image transforms based on configuration."""
 

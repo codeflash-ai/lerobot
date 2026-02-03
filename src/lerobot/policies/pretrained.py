@@ -43,7 +43,7 @@ class ActionSelectKwargs(TypedDict, total=False):
     noise: Tensor | None
 
 
-@torch.compile
+
 class PreTrainedPolicy(nn.Module, HubMixin, abc.ABC):
     """
     Base class for policy models.

@@ -618,7 +618,7 @@ def test_mixed_json_and_tensor_state():
         assert torch.allclose(loaded_step.running_mean, step.running_mean)
 
 
-@torch.compile
+
 class MockModuleStep(ProcessorStep, nn.Module):
     """Mock step that inherits from nn.Module to test state_dict handling of module parameters."""
 

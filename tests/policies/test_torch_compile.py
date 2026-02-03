@@ -14,16 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Unit tests for all @torch.compile decorated functions/classes.
+"""Unit tests for all  decorated functions/classes.
 
-This test file verifies that all @torch.compile decorated forward methods work correctly
+This test file verifies that all  decorated forward methods work correctly
 with CUDA, fp32 precision, and simple input shapes.
 """
 
 import pytest
 import torch
 
-# Import all modules with @torch.compile decorated classes
+# Import all modules with  decorated classes
 from lerobot.datasets.transforms import RandomSubsetApply, ImageTransforms, ImageTransformsConfig
 from lerobot.policies.vqbet.modeling_vqbet import (
     VQBeTPolicy,
@@ -69,7 +69,7 @@ def require_cuda():
 
 
 class TestVQBeTCompile:
-    """Test @torch.compile decorated classes in VQBeT."""
+    """Test  decorated classes in VQBeT."""
 
     def test_spatial_softmax_forward(self):
         """Test SpatialSoftmax.forward() method."""
@@ -117,7 +117,7 @@ class TestVQBeTCompile:
 
 
 class TestDiffusionCompile:
-    """Test @torch.compile decorated classes in Diffusion Policy."""
+    """Test  decorated classes in Diffusion Policy."""
 
     def test_diffusion_spatial_softmax_forward(self):
         """Test DiffusionSpatialSoftmax.forward() method."""
@@ -215,7 +215,7 @@ class TestDiffusionCompile:
 
 
 class TestACTCompile:
-    """Test @torch.compile decorated classes in ACT Policy."""
+    """Test  decorated classes in ACT Policy."""
 
     def test_act_encoder_layer_forward(self):
         """Test ACTEncoderLayer.forward() method."""
@@ -341,7 +341,7 @@ class TestACTCompile:
 
 
 class TestTransformsCompile:
-    """Test @torch.compile decorated classes in transforms."""
+    """Test  decorated classes in transforms."""
 
     def test_random_subset_apply_forward(self):
         """Test RandomSubsetApply.forward() method."""
@@ -394,7 +394,7 @@ class TestTransformsCompile:
 
 
 # Note: Full policy tests are covered in test_policies.py
-# This file focuses on unit testing individual @torch.compile decorated modules
+# This file focuses on unit testing individual  decorated modules
 
 
 class TestComparisonForwardVsCall:

@@ -52,7 +52,7 @@ def build_action_space(name: str, **kwargs) -> BaseActionSpace:
 # =============================================================================
 # Base class
 # =============================================================================
-@torch.compile
+
 class BaseActionSpace(nn.Module):
     """
     Abstract base class for all action-space definitions.
