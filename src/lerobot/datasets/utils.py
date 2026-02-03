@@ -168,14 +168,19 @@ def flatten_dict(d: dict, parent_key: str = "", sep: str = "/") -> dict:
     Returns:
         dict: A flattened dictionary.
     """
-    items = []
-    for k, v in d.items():
-        new_key = f"{parent_key}{sep}{k}" if parent_key else k
-        if isinstance(v, dict):
-            items.extend(flatten_dict(v, new_key, sep=sep).items())
-        else:
-            items.append((new_key, v))
-    return dict(items)
+    items: dict = {}
+
+    def _flatten(current: dict, base: str) -> None:
+        # Use a single result dict to avoid building many intermediate lists/dicts.
+        for k, v in current.items():
+            new_key = f"{base}{sep}{k}" if base else k
+            if isinstance(v, dict):
+                _flatten(v, new_key)
+            else:
+                items[new_key] = v
+
+    _flatten(d, parent_key)
+    return items
 
 
 def unflatten_dict(d: dict, sep: str = "/") -> dict:
@@ -193,15 +198,13 @@ def unflatten_dict(d: dict, sep: str = "/") -> dict:
     Returns:
         dict: A nested dictionary.
     """
-    outdict = {}
+    outdict: dict = {}
     for key, value in d.items():
         parts = key.split(sep)
-        d = outdict
+        cur = outdict
         for part in parts[:-1]:
-            if part not in d:
-                d[part] = {}
-            d = d[part]
-        d[parts[-1]] = value
+            cur = cur.setdefault(part, {})
+        cur[parts[-1]] = value
     return outdict
 
 
@@ -322,8 +325,11 @@ def cast_stats_to_numpy(stats: dict) -> dict[str, dict[str, np.ndarray]]:
     Returns:
         dict: The statistics dictionary with values cast to numpy arrays.
     """
-    stats = {key: np.array(value) for key, value in flatten_dict(stats).items()}
-    return unflatten_dict(stats)
+    flat = flatten_dict(stats)
+    # Convert values in-place to avoid allocating a second dict
+    for k in list(flat.keys()):
+        flat[k] = np.array(flat[k])
+    return unflatten_dict(flat)
 
 
 def load_stats(local_dir: Path) -> dict[str, dict[str, np.ndarray]] | None:
