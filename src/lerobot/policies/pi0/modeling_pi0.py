@@ -578,15 +578,27 @@ class PI0Pytorch(nn.Module):  # see openpi `PI0Pytorch`
             # Also compile the main forward pass used during training
             self.forward = torch.compile(self.forward, mode=config.compile_mode)
 
-        msg = """An incorrect transformer version is used, please create an issue on https://github.com/huggingface/lerobot/issues"""
+        # Check for custom transformers version (warn only, don't fail)
+        import os
 
-        try:
-            from transformers.models.siglip import check
+        if os.environ.get("LEROBOT_SKIP_TRANSFORMERS_CHECK") != "true":
+            try:
+                from transformers.models.siglip import check
 
-            if not check.check_whether_transformers_replace_is_installed_correctly():
-                raise ValueError(msg)
-        except ImportError:
-            raise ValueError(msg) from None
+                if not check.check_whether_transformers_replace_is_installed_correctly():
+                    import warnings
+                    warnings.warn(
+                        "Using a non-recommended transformers version. "
+                        "For best results, install: pip install git+https://github.com/huggingface/transformers.git@fix/lerobot_openpi",
+                        UserWarning
+                    )
+            except ImportError:
+                import warnings
+                warnings.warn(
+                    "Using a non-recommended transformers version. "
+                    "For best results, install: pip install git+https://github.com/huggingface/transformers.git@fix/lerobot_openpi",
+                    UserWarning
+                )
 
     def gradient_checkpointing_enable(self):
         """Enable gradient checkpointing for memory optimization."""
