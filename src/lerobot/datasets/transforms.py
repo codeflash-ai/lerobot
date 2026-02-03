@@ -120,12 +120,15 @@ class SharpnessJitter(Transform):
         self.sharpness = self._check_input(sharpness)
 
     def _check_input(self, sharpness):
-        if isinstance(sharpness, (int | float)):
+        if isinstance(sharpness, (int, float)):
             if sharpness < 0:
                 raise ValueError("If sharpness is a single number, it must be non negative.")
-            sharpness = [1.0 - sharpness, 1.0 + sharpness]
-            sharpness[0] = max(sharpness[0], 0.0)
-        elif isinstance(sharpness, collections.abc.Sequence) and len(sharpness) == 2:
+            lo = 1.0 - sharpness
+            if lo < 0.0:
+                lo = 0.0
+            hi = 1.0 + sharpness
+            return float(lo), float(hi)
+        elif isinstance(sharpness, Sequence) and len(sharpness) == 2:
             sharpness = [float(v) for v in sharpness]
         else:
             raise TypeError(f"{sharpness=} should be a single number or a sequence with length 2.")
