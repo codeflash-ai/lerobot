@@ -557,12 +557,37 @@ class DiffusionSinusoidalPosEmb(nn.Module):
         super().__init__()
         self.dim = dim
 
+        # Precompute the frequency tensor when it's safe (avoids division by zero
+        # at __init__ time and preserves original exception behavior).
+        half_dim = self.dim // 2
+        if half_dim > 1:
+            # compute scalar and freqs on CPU; register as buffer so moving the module
+            # to a device moves this tensor as well.
+            emb_scalar = math.log(10000) / (half_dim - 1)
+            freq = torch.exp(torch.arange(half_dim) * -emb_scalar)
+            # register buffer so it follows .to(device) and avoids reallocation on forward
+            self.register_buffer("freq", freq)
+        else:
+            # Do not precompute in the edge cases where the original code would
+            # perform the division in forward (to preserve exception timing/behavior).
+            self.freq = None
+
     def forward(self, x: Tensor) -> Tensor:
         device = x.device
         half_dim = self.dim // 2
-        emb = math.log(10000) / (half_dim - 1)
-        emb = torch.exp(torch.arange(half_dim, device=device) * -emb)
-        emb = x.unsqueeze(-1) * emb.unsqueeze(0)
+        # Use precomputed frequency tensor when available to avoid repeated arange+exp.
+        if getattr(self, "freq", None) is not None:
+            freq = self.freq
+            # Move to input's device/dtype only if necessary
+            if freq.device != device or freq.dtype != x.dtype:
+                freq = freq.to(device=device, dtype=x.dtype)
+            # Broadcast multiplication; avoid extra unsqueeze where possible
+            emb = x.unsqueeze(-1) * freq
+        else:
+            # Fallback to original computation to preserve behavior for edge cases
+            emb = math.log(10000) / (half_dim - 1)
+            emb = torch.exp(torch.arange(half_dim, device=device) * -emb)
+            emb = x.unsqueeze(-1) * emb.unsqueeze(0)
         emb = torch.cat((emb.sin(), emb.cos()), dim=-1)
         return emb
 
