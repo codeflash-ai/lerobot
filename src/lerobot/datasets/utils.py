@@ -219,19 +219,32 @@ def serialize_dict(stats: dict[str, torch.Tensor | np.ndarray | dict]) -> dict:
     Raises:
         NotImplementedError: If a value has an unsupported type.
     """
-    serialized_dict = {}
-    for key, value in flatten_dict(stats).items():
-        if isinstance(value, (torch.Tensor | np.ndarray)):
-            serialized_dict[key] = value.tolist()
-        elif isinstance(value, list) and isinstance(value[0], (int | float | list)):
-            serialized_dict[key] = value
-        elif isinstance(value, np.generic):
-            serialized_dict[key] = value.item()
-        elif isinstance(value, (int | float)):
-            serialized_dict[key] = value
-        else:
-            raise NotImplementedError(f"The value '{value}' of type '{type(value)}' is not supported.")
-    return unflatten_dict(serialized_dict)
+    # Build the serialized nested dict directly to avoid flattening then unflattening.
+    serialized_root: dict = {}
+    # Use an explicit stack of (source_dict, target_dict) for iterative DFS traversal.
+    stack: list[tuple[dict, dict]] = [(stats, serialized_root)]
+
+    while stack:
+        src, dst = stack.pop()
+        for key, value in src.items():
+            if isinstance(value, dict):
+                new_sub: dict = {}
+                dst[key] = new_sub
+                stack.append((value, new_sub))
+            else:
+                # Note: preserve original type-check ordering and behavior (including
+                # potential IndexError when value is an empty list and value[0] is accessed).
+                if isinstance(value, (torch.Tensor, np.ndarray)):
+                    dst[key] = value.tolist()
+                elif isinstance(value, list) and isinstance(value[0], (int, float, list)):
+                    dst[key] = value
+                elif isinstance(value, np.generic):
+                    dst[key] = value.item()
+                elif isinstance(value, (int, float)):
+                    dst[key] = value
+                else:
+                    raise NotImplementedError(f"The value '{value}' of type '{type(value)}' is not supported.")
+    return serialized_root
 
 
 def embed_images(dataset: datasets.Dataset) -> datasets.Dataset:
