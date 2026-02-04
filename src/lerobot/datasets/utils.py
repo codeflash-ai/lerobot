@@ -766,10 +766,15 @@ def combine_feature_dicts(*dicts: dict) -> dict:
         ValueError: If there's a dtype mismatch for a feature being merged.
     """
     out: dict = {}
+    # Cache of seen name sets per feature key to avoid rebuilding sets repeatedly.
+    seen_map: dict = {}
+
     for d in dicts:
         for key, value in d.items():
             if not isinstance(value, dict):
                 out[key] = value
+                # Ensure we don't keep a stale seen set for a key overwritten by a non-dict.
+                seen_map.pop(key, None)
                 continue
 
             dtype = value.get("dtype")
@@ -788,17 +793,32 @@ def combine_feature_dicts(*dicts: dict) -> dict:
                 if "dtype" in target and dtype != target["dtype"]:
                     raise ValueError(f"dtype mismatch for '{key}': {target['dtype']} vs {dtype}")
 
+                # Prepare a cached set of seen names for this key.
+                try:
+                    seen = seen_map.get(key)
+                    if seen is None:
+                        # This may raise (KeyError/TypeError) if target is not a dict or lacks "names",
+                        # which mirrors the original behavior.
+                        seen = set(target["names"])
+                        seen_map[key] = seen
+                except Exception:
+                    # Re-raise to keep the same exception behavior as the original implementation.
+                    raise
+
                 # Merge feature names: append only new ones to preserve order without duplicates
-                seen = set(target["names"])
+                # Use a local reference to avoid repeated lookups.
+                target_names = target["names"]
                 for n in value["names"]:
                     if n not in seen:
-                        target["names"].append(n)
+                        target_names.append(n)
                         seen.add(n)
                 # Recompute the shape to reflect the updated number of features
-                target["shape"] = (len(target["names"]),)
+                target["shape"] = (len(target_names),)
             else:
                 # For images/videos and non-1D entries: override with the latest definition
                 out[key] = value
+                # Clear any cached seen set since the target has been replaced.
+                seen_map.pop(key, None)
     return out
 
 
