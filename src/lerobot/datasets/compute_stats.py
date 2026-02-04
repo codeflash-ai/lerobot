@@ -408,11 +408,17 @@ def _compute_basic_stats(
         quantile_list = DEFAULT_QUANTILES
     quantile_list_keys = [f"q{int(q * 100):02d}" for q in quantile_list]
 
+    mean = np.mean(array, axis=0)
+    tmp = np.empty_like(array, dtype=mean.dtype)
+    np.subtract(array, mean, out=tmp)
+    np.square(tmp, out=tmp)
+    std = np.sqrt(np.mean(tmp, axis=0))
+
     stats = {
         "min": np.min(array, axis=0),
         "max": np.max(array, axis=0),
-        "mean": np.mean(array, axis=0),
-        "std": np.std(array, axis=0),
+        "mean": mean,
+        "std": std,
         "count": np.array([sample_count]),
     }
 
