@@ -219,11 +219,11 @@ def sample_indices(data_len: int) -> list[int]:
 def auto_downsample_height_width(img: np.ndarray, target_size: int = 150, max_size_threshold: int = 300):
     _, height, width = img.shape
 
-    if max(width, height) < max_size_threshold:
+    if width < max_size_threshold and height < max_size_threshold:
         # no downsampling needed
         return img
 
-    downsample_factor = int(width / target_size) if width > height else int(height / target_size)
+    downsample_factor = width // target_size if width > height else height // target_size
     return img[:, ::downsample_factor, ::downsample_factor]
 
 
