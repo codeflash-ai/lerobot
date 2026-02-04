@@ -693,13 +693,20 @@ def build_dataset_frame(
         dict: A dictionary representing a single frame of data.
     """
     frame = {}
+    # Local aliases to avoid repeated global lookups and repeated string formatting
+    default_features_local = DEFAULT_FEATURES
+    vals = values
+    prefix_images = f"{prefix}.images."
     for key, ft in ds_features.items():
-        if key in DEFAULT_FEATURES or not key.startswith(prefix):
+        if key in default_features_local or not key.startswith(prefix):
             continue
         elif ft["dtype"] == "float32" and len(ft["shape"]) == 1:
-            frame[key] = np.array([values[name] for name in ft["names"]], dtype=np.float32)
+            # Use np.fromiter over a map of values.__getitem__ to avoid creating an intermediate list
+            names = ft["names"]
+            # Preserve original behavior when names is None (will raise TypeError as before)
+            frame[key] = np.fromiter(map(vals.__getitem__, names), dtype=np.float32, count=len(names))
         elif ft["dtype"] in ["image", "video"]:
-            frame[key] = values[key.removeprefix(f"{prefix}.images.")]
+            frame[key] = values[key.removeprefix(prefix_images)]
 
     return frame
 
