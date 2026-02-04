@@ -863,12 +863,18 @@ def check_delta_timestamps(
         ValueError: If any delta is outside the tolerance and `raise_value_error` is True.
     """
     outside_tolerance = {}
+    inv_fps = 1.0 / fps
+    _round = round
     for key, delta_ts in delta_timestamps.items():
-        within_tolerance = [abs(ts * fps - round(ts * fps)) / fps <= tolerance_s for ts in delta_ts]
-        if not all(within_tolerance):
-            outside_tolerance[key] = [
-                ts for ts, is_within in zip(delta_ts, within_tolerance, strict=True) if not is_within
-            ]
+        # Collect only values outside of tolerance to avoid allocating full boolean lists
+        bad_values: list[float] = []
+        for ts in delta_ts:
+            ts_fps = ts * fps
+            if not (abs(ts_fps - _round(ts_fps)) * inv_fps <= tolerance_s):
+                bad_values.append(ts)
+        if bad_values:
+            outside_tolerance[key] = bad_values
+
 
     if len(outside_tolerance) > 0:
         if raise_value_error:
