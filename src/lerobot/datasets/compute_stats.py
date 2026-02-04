@@ -286,7 +286,7 @@ def _reshape_stats_by_axis(
 def _reshape_for_image_stats(value: np.ndarray, keepdims: bool) -> np.ndarray:
     """Reshape statistics for image data (axis=(0,2,3))."""
     if keepdims and value.ndim == 1:
-        return value.reshape(1, -1, 1, 1)
+        return value[None, :, None, None]
     return value
 
 
