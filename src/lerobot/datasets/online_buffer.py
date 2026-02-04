@@ -241,7 +241,7 @@ class OnlineBuffer(torch.utils.data.Dataset):
             elif isinstance(v, np.ndarray):
                 item_[k] = torch.from_numpy(v)
             else:
-                item_[k] = torch.tensor(v)
+                item_[k] = torch.as_tensor(v)
         return item_
 
     def __getitem__(self, idx: int) -> dict[str, torch.Tensor]:
