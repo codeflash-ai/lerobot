@@ -170,25 +170,42 @@ class RunningQuantileStats:
 
     def _compute_single_quantile(self, hist: np.ndarray, edges: np.ndarray, target_count: float) -> float:
         """Compute a single quantile value from histogram and bin edges."""
-        cumsum = np.cumsum(hist)
-        idx = np.searchsorted(cumsum, target_count)
+        # Early-exit accumulation to avoid allocating a full cumulative array.
+        total = 0.0
+        n_bins = hist.shape[0]
 
-        if idx == 0:
-            return edges[0]
-        if idx >= len(cumsum):
+        # Iterate bins and accumulate until we reach or exceed target_count.
+        # This mirrors np.searchsorted(np.cumsum(hist), target_count) but avoids
+        # creating the full cumsum array and can break early for low quantiles.
+        bin_idx = None
+        for i in range(n_bins):
+            total += float(hist[i])
+            if total >= target_count:
+                bin_idx = i
+                break
+
+        if bin_idx is None:
+            # target_count beyond total mass -> return last edge
             return edges[-1]
 
-        # If not edge case, interpolate within the bin
-        count_before = cumsum[idx - 1]
-        count_in_bin = cumsum[idx] - count_before
+        if bin_idx == 0:
+            # Matches original behavior: if searchsorted returns 0, return first edge
+            return edges[0]
+
+        count_before = total - float(hist[bin_idx])
+        count_in_bin = float(hist[bin_idx])
+
+        # If no samples in this bin, use the bin edge
 
         # If no samples in this bin, use the bin edge
         if count_in_bin == 0:
-            return edges[idx]
+            return edges[bin_idx]
+
+        # Linear interpolation within the bin
 
         # Linear interpolation within the bin
         fraction = (target_count - count_before) / count_in_bin
-        return edges[idx] + fraction * (edges[idx + 1] - edges[idx])
+        return edges[bin_idx] + fraction * (edges[bin_idx + 1] - edges[bin_idx])
 
 
 def estimate_num_samples(
