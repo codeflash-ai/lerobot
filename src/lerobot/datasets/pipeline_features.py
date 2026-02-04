@@ -20,6 +20,11 @@ from lerobot.configs.types import PipelineFeatureType
 from lerobot.datasets.utils import hw_to_dataset_features
 from lerobot.processor import DataProcessorPipeline, RobotAction, RobotObservation
 from lerobot.utils.constants import ACTION, OBS_IMAGES, OBS_STATE, OBS_STR
+from collections import OrderedDict
+
+_MAX_CACHE_SIZE = 512
+
+_compile_cache: dict = OrderedDict()
 
 
 def create_initial_features(
@@ -47,7 +52,11 @@ def create_initial_features(
 def should_keep(key: str, patterns: tuple[str]) -> bool:
     if patterns is None:
         return True
-    return any(re.search(pat, key) for pat in patterns)
+    compiled = _compile_patterns(patterns)
+    for pat in compiled:
+        if pat.search(key):
+            return True
+    return False
 
 
 def strip_prefix(key: str, prefixes_to_strip: tuple[str]) -> str:
@@ -137,3 +146,72 @@ def aggregate_pipeline_dataset_features(
         dataset_features.update(hw_to_dataset_features(processed_features[OBS_STR], OBS_STR, use_videos))
 
     return dataset_features
+
+
+def _compile_patterns(patterns):
+    # Attempt to use the patterns tuple as a cache key; if it contains
+    # unhashable elements, fall back to on-the-fly compilation to preserve
+    # original exceptions and behavior.
+    try:
+        key = tuple(patterns)
+    except TypeError:
+        return tuple(
+            pat if hasattr(pat, "search") and callable(pat.search) else re.compile(pat)
+            for pat in patterns
+        )
+
+    cache = _compile_cache
+    compiled = cache.get(key)
+    if compiled is not None:
+        # mark as recently used
+        cache.move_to_end(key)
+        return compiled
+
+    compiled_list = []
+    for pat in patterns:
+        # If it's already a compiled pattern-like object, reuse it;
+        # otherwise compile the pattern string.
+        if hasattr(pat, "search") and callable(pat.search):
+            compiled_list.append(pat)
+        else:
+            compiled_list.append(re.compile(pat))
+    compiled = tuple(compiled_list)
+
+    cache[key] = compiled
+    if len(cache) > _MAX_CACHE_SIZE:
+        cache.popitem(last=False)
+    return compiled
+
+def _compile_patterns(patterns):
+    # Attempt to use the patterns tuple as a cache key; if it contains
+    # unhashable elements, fall back to on-the-fly compilation to preserve
+    # original exceptions and behavior.
+    try:
+        key = tuple(patterns)
+    except TypeError:
+        return tuple(
+            pat if hasattr(pat, "search") and callable(pat.search) else re.compile(pat)
+            for pat in patterns
+        )
+
+    cache = _compile_cache
+    compiled = cache.get(key)
+    if compiled is not None:
+        # mark as recently used
+        cache.move_to_end(key)
+        return compiled
+
+    compiled_list = []
+    for pat in patterns:
+        # If it's already a compiled pattern-like object, reuse it;
+        # otherwise compile the pattern string.
+        if hasattr(pat, "search") and callable(pat.search):
+            compiled_list.append(pat)
+        else:
+            compiled_list.append(re.compile(pat))
+    compiled = tuple(compiled_list)
+
+    cache[key] = compiled
+    if len(cache) > _MAX_CACHE_SIZE:
+        cache.popitem(last=False)
+    return compiled
