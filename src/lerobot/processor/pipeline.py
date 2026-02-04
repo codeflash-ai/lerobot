@@ -1329,9 +1329,16 @@ class DataProcessorPipeline(HubMixin, Generic[TInput, TOutput]):
         Returns:
             The final feature description after all transformations.
         """
-        features: dict[PipelineFeatureType, dict[str, PolicyFeature]] = deepcopy(initial_features)
+        # Create a lightweight copy of the feature mapping structure:
+        # - copy the outer mapping and each inner feature dict so that steps that
+        #   mutate these mappings won't alter the caller's originals.
+        # - avoid a full recursive deepcopy, which was the main runtime/memory hotspot.
+        features: dict[PipelineFeatureType, dict[str, PolicyFeature]] = {
+            ptype: (feats.copy() if isinstance(feats, dict) else dict(feats))
+            for ptype, feats in initial_features.items()
+        }
 
-        for _, step in enumerate(self.steps):
+        for step in self.steps:
             out = step.transform_features(features)
             features = out
         return features
