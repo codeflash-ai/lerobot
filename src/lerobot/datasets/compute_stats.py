@@ -309,10 +309,12 @@ def _reshape_for_feature_stats(value: np.ndarray, keepdims: bool) -> np.ndarray:
     if not keepdims:
         return value
 
-    if value.ndim == 0:
+    ndim = value.ndim
+    if ndim == 0:
         return value.reshape(1, 1)
-    elif value.ndim == 1:
-        return value.reshape(-1, 1)
+    if ndim == 1:
+        # use slicing to create a (n, 1) view which is typically faster than reshape(-1, 1)
+        return value[:, None]
     return value
 
 
