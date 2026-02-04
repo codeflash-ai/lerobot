@@ -335,12 +335,12 @@ def compute_sampler_weights(
     weights = []
 
     if len(offline_dataset) > 0:
+        # Extract episodes data once before the loop to avoid repeated lookups
+        from_indices = offline_dataset.meta.episodes["dataset_from_index"]
+        to_indices = offline_dataset.meta.episodes["dataset_to_index"]
+        
         offline_data_mask_indices = []
-        for start_index, end_index in zip(
-            offline_dataset.meta.episodes["dataset_from_index"],
-            offline_dataset.meta.episodes["dataset_to_index"],
-            strict=True,
-        ):
+        for start_index, end_index in zip(from_indices, to_indices, strict=True):
             offline_data_mask_indices.extend(range(start_index, end_index - offline_drop_n_last_frames))
         offline_data_mask = torch.zeros(len(offline_dataset), dtype=torch.bool)
         offline_data_mask[torch.tensor(offline_data_mask_indices)] = True
@@ -355,10 +355,12 @@ def compute_sampler_weights(
     if online_dataset is not None and len(online_dataset) > 0:
         online_data_mask_indices = []
         episode_indices = online_dataset.get_data_by_key("episode_index")
-        for episode_idx in torch.unique(episode_indices):
-            where_episode = torch.where(episode_indices == episode_idx)
-            start_index = where_episode[0][0]
-            end_index = where_episode[0][-1] + 1
+        unique_episodes = torch.unique(episode_indices)
+        
+        for episode_idx in unique_episodes:
+            where_episode = torch.where(episode_indices == episode_idx)[0]
+            start_index = where_episode[0]
+            end_index = where_episode[-1] + 1
             online_data_mask_indices.extend(
                 range(start_index.item(), end_index.item() - online_drop_n_last_frames)
             )
