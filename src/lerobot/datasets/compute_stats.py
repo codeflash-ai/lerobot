@@ -208,7 +208,15 @@ def estimate_num_samples(
     """
     if dataset_len < min_num_samples:
         min_num_samples = dataset_len
-    return max(min_num_samples, min(int(dataset_len**power), max_num_samples))
+    # Compute powered estimate once
+    cap = int(dataset_len**power)
+    # Clamp cap to max_num_samples
+    if cap > max_num_samples:
+        cap = max_num_samples
+    # Ensure at least min_num_samples
+    if min_num_samples > cap:
+        return min_num_samples
+    return cap
 
 
 def sample_indices(data_len: int) -> list[int]:
