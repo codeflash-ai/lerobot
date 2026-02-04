@@ -1217,7 +1217,11 @@ def item_to_torch(item: dict) -> dict:
 
 
 def is_float_in_list(target, float_list, threshold=1e-6):
-    return any(abs(target - x) <= threshold for x in float_list)
+    for x in float_list:
+        diff = target - x
+        if diff <= threshold and diff >= -threshold:
+            return True
+    return False
 
 
 def find_float_index(target, float_list, threshold=1e-6):
