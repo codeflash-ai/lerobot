@@ -59,15 +59,22 @@ def has_quantile_stats(stats: dict[str, dict] | None, quantile_list_keys: list[s
     Returns:
         True if quantile statistics are present, False otherwise
     """
-    if quantile_list_keys is None:
-        quantile_list_keys = [f"q{int(q * 100):02d}" for q in DEFAULT_QUANTILES]
-
     if stats is None:
         return False
 
+    if quantile_list_keys is None:
+        quantile_list_keys = [f"q{int(q * 100):02d}" for q in DEFAULT_QUANTILES]
+
+    quantile_set = set(quantile_list_keys)
+
     for feature_stats in stats.values():
-        if any(q_key in feature_stats for q_key in quantile_list_keys):
-            return True
+        # Use set-based check for dicts, fall back to original logic for other iterables
+        if isinstance(feature_stats, dict):
+            if not quantile_set.isdisjoint(feature_stats):
+                return True
+        else:
+            if any(q_key in feature_stats for q_key in quantile_list_keys):
+                return True
 
     return False
 
