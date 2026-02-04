@@ -40,12 +40,10 @@ from torchvision import transforms
 
 from lerobot.configs.types import FeatureType, PolicyFeature
 from lerobot.datasets.backward_compatibility import (
-    FUTURE_MESSAGE,
-    BackwardCompatibilityError,
-    ForwardCompatibilityError,
-)
+    FUTURE_MESSAGE, BackwardCompatibilityError, ForwardCompatibilityError)
 from lerobot.utils.constants import ACTION, OBS_ENV_STATE, OBS_STR
-from lerobot.utils.utils import SuppressProgressBars, is_valid_numpy_dtype_string
+from lerobot.utils.utils import (SuppressProgressBars,
+                                 is_valid_numpy_dtype_string)
 
 DEFAULT_CHUNK_SIZE = 1000  # Max number of files per chunk
 DEFAULT_DATA_FILE_SIZE_IN_MB = 100  # Max size per file
@@ -408,12 +406,22 @@ def load_image_as_numpy(
     Returns:
         np.ndarray: The image as a numpy array.
     """
-    img = PILImage.open(fpath).convert("RGB")
-    img_array = np.array(img, dtype=dtype)
+    # Open the image and ensure RGB mode. Using a context manager ensures file handles are closed.
+    with PILImage.open(fpath) as img:
+        if img.mode != "RGB":
+            img = img.convert("RGB")
+        # Use np.asarray to avoid an unnecessary copy when the underlying buffer is already uint8.
+        img_array = np.asarray(img)
+
+    # Convert to channel-first only if requested
     if channel_first:  # (H, W, C) -> (C, H, W)
         img_array = np.transpose(img_array, (2, 0, 1))
     if np.issubdtype(dtype, np.floating):
-        img_array /= 255.0
+        img_array = img_array.astype(dtype, copy=False) / 255.0
+    else:
+        if img_array.dtype != dtype:
+            img_array = img_array.astype(dtype)
+
     return img_array
 
 

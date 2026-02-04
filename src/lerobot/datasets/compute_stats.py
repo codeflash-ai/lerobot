@@ -13,6 +13,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from concurrent.futures import ThreadPoolExecutor
+
 import numpy as np
 
 from lerobot.datasets.utils import load_image_as_numpy
@@ -213,7 +215,7 @@ def estimate_num_samples(
 
 def sample_indices(data_len: int) -> list[int]:
     num_samples = estimate_num_samples(data_len)
-    return np.round(np.linspace(0, data_len - 1, num_samples)).astype(int).tolist()
+    return np.rint(np.linspace(0, data_len - 1, num_samples)).astype(int).tolist()
 
 
 def auto_downsample_height_width(img: np.ndarray, target_size: int = 150, max_size_threshold: int = 300):
@@ -231,16 +233,33 @@ def sample_images(image_paths: list[str]) -> np.ndarray:
     sampled_indices = sample_indices(len(image_paths))
 
     images = None
-    for i, idx in enumerate(sampled_indices):
-        path = image_paths[idx]
+
+    # Helper to load and downsample a single path (keeps main loop clearer)
+    def _load_and_downsample(path: str) -> np.ndarray:
         # we load as uint8 to reduce memory usage
         img = load_image_as_numpy(path, dtype=np.uint8, channel_first=True)
         img = auto_downsample_height_width(img)
+        return img
 
-        if images is None:
-            images = np.empty((len(sampled_indices), *img.shape), dtype=np.uint8)
+    # Load the first image synchronously to determine shape & dtype and to preserve
+    # the original exception behavior/order if it fails immediately.
+    if sampled_indices:
+        first_path = image_paths[sampled_indices[0]]
+        first_img = _load_and_downsample(first_path)
+        images = np.empty((len(sampled_indices), *first_img.shape), dtype=np.uint8)
+        images[0] = first_img
 
-        images[i] = img
+    # If there are more images, load them concurrently but preserve order
+    if len(sampled_indices) > 1:
+        # Choose a modest number of threads to overlap I/O without excessive threads.
+        max_workers = min(8, len(sampled_indices) - 1)
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            # Submit remaining loads in order
+            futures = [executor.submit(_load_and_downsample, image_paths[idx]) for idx in sampled_indices[1:]]
+            # Iterate in order so that exceptions propagate similarly to the original sequential code
+            for i, fut in enumerate(futures, start=1):
+                images[i] = fut.result()
+
 
     return images
 
