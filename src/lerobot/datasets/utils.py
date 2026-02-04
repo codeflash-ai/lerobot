@@ -46,6 +46,7 @@ from lerobot.datasets.backward_compatibility import (
 )
 from lerobot.utils.constants import ACTION, OBS_ENV_STATE, OBS_STR
 from lerobot.utils.utils import SuppressProgressBars, is_valid_numpy_dtype_string
+from functools import lru_cache
 
 DEFAULT_CHUNK_SIZE = 1000  # Max number of files per chunk
 DEFAULT_DATA_FILE_SIZE_IN_MB = 100  # Max size per file
@@ -1085,7 +1086,9 @@ def validate_feature_numpy_array(
         actual_dtype = value.dtype
         actual_shape = value.shape
 
-        if actual_dtype != np.dtype(expected_dtype):
+        expected_dtype_obj = _cached_dtype(expected_dtype)
+
+        if actual_dtype != expected_dtype_obj:
             error_message += f"The feature '{name}' of dtype '{actual_dtype}' is not of the expected dtype '{expected_dtype}'.\n"
 
         if actual_shape != expected_shape:
@@ -1392,3 +1395,16 @@ def safe_shard(dataset: datasets.IterableDataset, index: int, num_shards: int) -
     shard_idx = min(dataset.num_shards, index + 1) - 1
 
     return dataset.shard(num_shards, index=shard_idx)
+
+
+
+@lru_cache(maxsize=128)
+def _cached_dtype(dtype_str: str) -> np.dtype:
+    # Helper that caches dtype construction to avoid repeated np.dtype parsing cost.
+    return np.dtype(dtype_str)
+
+
+@lru_cache(maxsize=128)
+def _cached_dtype(dtype_str: str) -> np.dtype:
+    # Helper that caches dtype construction to avoid repeated np.dtype parsing cost.
+    return np.dtype(dtype_str)
