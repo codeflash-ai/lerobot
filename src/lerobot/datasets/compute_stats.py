@@ -156,17 +156,50 @@ class RunningQuantileStats:
 
     def _compute_quantiles(self) -> list[np.ndarray]:
         """Compute quantiles based on histograms."""
-        results = []
-        for q in self._quantile_list:
-            target_count = q * self._count
-            q_values = []
+        # Build pairs using strict zip to preserve original mismatch behavior.
+        pairs = list(zip(self._histograms, self._bin_edges, strict=True))
 
-            for hist, edges in zip(self._histograms, self._bin_edges, strict=True):
-                q_value = self._compute_single_quantile(hist, edges, target_count)
-                q_values.append(q_value)
+        # If there are no histograms, mirror original behavior: return empty arrays per quantile.
+        if not pairs:
+            results = []
+            for _ in self._quantile_list:
+                results.append(np.array([], dtype=float))
+            return results
 
-            results.append(np.array(q_values))
-        return results
+        # Precompute cumulative sums once per histogram to avoid redundant work.
+        cumsums = [np.cumsum(hist) for hist, _ in pairs]
+
+        # Preallocate result arrays: one array per quantile, length == number of features.
+        num_features = len(pairs)
+        results_arrays: list[np.ndarray] = [np.empty(num_features, dtype=float) for _ in self._quantile_list]
+
+        # Fill results by iterating features first (cumsum computed) and quantiles nested.
+        for i, ((hist, edges), cumsum) in enumerate(zip(pairs, cumsums)):
+            for j, q in enumerate(self._quantile_list):
+                target_count = q * self._count
+                idx = np.searchsorted(cumsum, target_count)
+
+                if idx == 0:
+                    val = edges[0]
+                elif idx >= len(cumsum):
+                    val = edges[-1]
+                else:
+                    # If not edge case, interpolate within the bin
+                    count_before = cumsum[idx - 1]
+                    count_in_bin = cumsum[idx] - count_before
+
+                    # If no samples in this bin, use the bin edge
+                    if count_in_bin == 0:
+                        val = edges[idx]
+                    else:
+                        # Linear interpolation within the bin
+                        fraction = (target_count - count_before) / count_in_bin
+                        val = edges[idx] + fraction * (edges[idx + 1] - edges[idx])
+
+                results_arrays[j][i] = val
+
+        # Return as list of numpy arrays, one per quantile (matching original return structure).
+        return [arr for arr in results_arrays]
 
     def _compute_single_quantile(self, hist: np.ndarray, edges: np.ndarray, target_count: float) -> float:
         """Compute a single quantile value from histogram and bin edges."""
