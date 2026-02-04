@@ -138,19 +138,46 @@ def decode_video_frames_torchvision(
 
     reader = None
 
-    query_ts = torch.tensor(timestamps)
-    loaded_ts = torch.tensor(loaded_ts)
+    # create query and loaded timestamp tensors as float32 to avoid unnecessary float64 work
+    query_ts = torch.tensor(timestamps, dtype=torch.float32)
+    loaded_ts = torch.tensor(loaded_ts, dtype=torch.float32)
 
-    # compute distances between each query timestamp and timestamps of all loaded frames
-    dist = torch.cdist(query_ts[:, None], loaded_ts[:, None], p=1)
-    min_, argmin_ = dist.min(1)
+    # If there are many loaded frames, computing the full distance matrix is wasteful.
+    # Use searchsorted (logarithmic) on the sorted loaded timestamps to find the nearest candidate
+    # for each query timestamp by checking only the insertion point and its neighbor.
+    # This produces identical nearest indices/min distances while avoiding O(M*N) memory/time.
+    if loaded_ts.numel() == 0:
+        # Defensive: preserve behavior (will likely fail later with informative assert), but keep shapes consistent.
+        dist = torch.cdist(query_ts[:, None], loaded_ts[:, None], p=1)
+        min_, argmin_ = dist.min(1)
+    else:
+        # torch.searchsorted expects the sorted tensor as first arg.
+        # It returns insertion indices such that loaded_ts[ins-1] <= query < loaded_ts[ins]
+        ins = torch.searchsorted(loaded_ts, query_ts)
+        n_loaded = loaded_ts.size(0)
+        # clamp right indices to valid range
+        right_idx = torch.clamp(ins, 0, n_loaded - 1)
+        left_idx = torch.clamp(ins - 1, 0, n_loaded - 1)
+
+        left_vals = loaded_ts[left_idx]
+        right_vals = loaded_ts[right_idx]
+
+        dist_left = torch.abs(query_ts - left_vals)
+        dist_right = torch.abs(query_ts - right_vals)
+
+        # choose left when equal (<=) to match deterministic behavior
+        choose_left = dist_left <= dist_right
+        # build argmin indices
+        argmin_ = torch.where(choose_left, left_idx, right_idx)
+        min_ = torch.where(choose_left, dist_left, dist_right)
+
 
     is_within_tol = min_ < tolerance_s
     assert is_within_tol.all(), (
         f"One or several query timestamps unexpectedly violate the tolerance ({min_[~is_within_tol]} > {tolerance_s=})."
-        "It means that the closest frame that can be loaded from the video is too far away in time."
-        "This might be due to synchronization issues with timestamps during data collection."
-        "To be safe, we advise to ignore this item during training."
+        " It means that the closest frame that can be loaded from the video is too far away in time."
+        " This might be due to synchronization issues with timestamps during data collection."
+        " To be safe, we advise to ignore this item during training."
         f"\nqueried timestamps: {query_ts}"
         f"\nloaded timestamps: {loaded_ts}"
         f"\nvideo: {video_path}"
@@ -158,14 +185,19 @@ def decode_video_frames_torchvision(
     )
 
     # get closest frames to the query timestamps
-    closest_frames = torch.stack([loaded_frames[idx] for idx in argmin_])
+    # argmin_ -> python list of ints for efficient indexing into loaded_frames list
+    argmin_list = argmin_.tolist()
+    closest_frames = torch.stack([loaded_frames[idx] for idx in argmin_list])
     closest_ts = loaded_ts[argmin_]
 
     if log_loaded_timestamps:
         logging.info(f"{closest_ts=}")
 
     # convert to the pytorch format which is float32 in [0,1] range (and channel first)
-    closest_frames = closest_frames.type(torch.float32) / 255
+    # Convert dtype first then divide in-place to reduce temporaries.
+    closest_frames = closest_frames.to(torch.float32)
+    closest_frames.div_(255.0)
+
 
     assert len(timestamps) == len(closest_frames)
     return closest_frames
