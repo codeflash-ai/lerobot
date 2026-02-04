@@ -346,16 +346,44 @@ def _reshape_single_stat(
 
     """
     if axis == (0, 2, 3):
-        return _reshape_for_image_stats(value, keepdims)
+        if keepdims and value.ndim == 1:
+            return value.reshape(1, -1, 1, 1)
+        return value
 
-    if axis in [0, (0,)]:
-        return _reshape_for_vector_stats(value, keepdims, original_shape)
+    # Handle vector stats
+    if axis == 0 or axis == (0,):
+        if not keepdims:
+            return value
+        
+        original_len = len(original_shape)
+        value_ndim = value.ndim
+        
+        if original_len == 1 and value_ndim > 0:
+            return value.reshape(1)
+        elif original_len >= 2 and value_ndim == 1:
+            return value.reshape(1, -1)
+        return value
+
+    # Handle feature stats
 
     if axis == (1,):
-        return _reshape_for_feature_stats(value, keepdims)
+        if not keepdims:
+            return value
+        
+        value_ndim = value.ndim
+        if value_ndim == 0:
+            return value.reshape(1, 1)
+        elif value_ndim == 1:
+            return value.reshape(-1, 1)
+        return value
+
+    # Handle global stats
 
     if axis is None:
-        return _reshape_for_global_stats(value, keepdims, original_shape)
+        if keepdims:
+            target_shape = tuple(1 for _ in original_shape)
+            return value.reshape(target_shape)
+        return np.atleast_1d(value)
 
     return value
 
