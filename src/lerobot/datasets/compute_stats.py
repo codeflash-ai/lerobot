@@ -321,9 +321,13 @@ def _reshape_for_global_stats(
 ) -> np.ndarray | float:
     """Reshape statistics for global reduction (axis=None)."""
     if keepdims:
-        target_shape = tuple(1 for _ in original_shape)
+        target_shape = (1,) * len(original_shape)
         return value.reshape(target_shape)
     # Keep at least 1-D arrays to satisfy validator
+    if isinstance(value, np.ndarray):
+        if value.ndim >= 1:
+            return value
+        return value.reshape(1)
     return np.atleast_1d(value)
 
 
