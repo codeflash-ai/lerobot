@@ -156,17 +156,44 @@ class RunningQuantileStats:
 
     def _compute_quantiles(self) -> list[np.ndarray]:
         """Compute quantiles based on histograms."""
-        results = []
-        for q in self._quantile_list:
-            target_count = q * self._count
-            q_values = []
-
-            for hist, edges in zip(self._histograms, self._bin_edges, strict=True):
-                q_value = self._compute_single_quantile(hist, edges, target_count)
-                q_values.append(q_value)
-
-            results.append(np.array(q_values))
-        return results
+        # Pre-compute target counts for all quantiles once
+        target_counts = np.array(self._quantile_list) * self._count
+        
+        # Pre-allocate results array for better memory efficiency
+        num_features = len(self._histograms)
+        num_quantiles = len(self._quantile_list)
+        all_quantile_values = np.zeros((num_quantiles, num_features))
+        
+        # Process each feature dimension
+        for feat_idx, (hist, edges) in enumerate(zip(self._histograms, self._bin_edges, strict=True)):
+            # Pre-compute cumsum once per histogram
+            cumsum = np.cumsum(hist)
+            
+            # Vectorized searchsorted for all quantiles at once
+            indices = np.searchsorted(cumsum, target_counts)
+            
+            # Handle edge cases vectorized
+            indices = np.clip(indices, 0, len(cumsum))
+            
+            # Compute quantile values for all quantiles at once
+            for q_idx, (idx, target_count) in enumerate(zip(indices, target_counts)):
+                if idx == 0:
+                    all_quantile_values[q_idx, feat_idx] = edges[0]
+                elif idx >= len(cumsum):
+                    all_quantile_values[q_idx, feat_idx] = edges[-1]
+                else:
+                    # Linear interpolation within the bin
+                    count_before = cumsum[idx - 1]
+                    count_in_bin = cumsum[idx] - count_before
+                    
+                    if count_in_bin == 0:
+                        all_quantile_values[q_idx, feat_idx] = edges[idx]
+                    else:
+                        fraction = (target_count - count_before) / count_in_bin
+                        all_quantile_values[q_idx, feat_idx] = edges[idx] + fraction * (edges[idx + 1] - edges[idx])
+        
+        # Convert to list of arrays for compatibility
+        return [all_quantile_values[i] for i in range(num_quantiles)]
 
     def _compute_single_quantile(self, hist: np.ndarray, edges: np.ndarray, target_count: float) -> float:
         """Compute a single quantile value from histogram and bin edges."""
