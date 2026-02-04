@@ -273,12 +273,29 @@ def _reshape_stats_by_axis(
     if axis == (1,) and not keepdims:
         return stats
 
-    result = {}
+    # Precompute axis checks to avoid repeating expensive branch logic per-stat.
+    axis_is_image = axis == (0, 2, 3)
+    axis_is_vector = axis == 0 or axis == (0,)
+    axis_is_feature = axis == (1,)
+    axis_is_global = axis is None
+
+    result: dict[str, np.ndarray] = {}
     for key, value in stats.items():
         if key == "count":
             result[key] = value
+            continue
+
+        if axis_is_image:
+            result[key] = _reshape_for_image_stats(value, keepdims)
+        elif axis_is_vector:
+            result[key] = _reshape_for_vector_stats(value, keepdims, original_shape)
+        elif axis_is_feature:
+            result[key] = _reshape_for_feature_stats(value, keepdims)
+        elif axis_is_global:
+            result[key] = _reshape_for_global_stats(value, keepdims, original_shape)
         else:
-            result[key] = _reshape_single_stat(value, axis, keepdims, original_shape)
+            result[key] = value
+
 
     return result
 
