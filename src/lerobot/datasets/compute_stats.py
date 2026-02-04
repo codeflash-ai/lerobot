@@ -564,40 +564,47 @@ def _assert_type_and_shape(stats_list: list[dict[str, dict]]):
 
 def aggregate_feature_stats(stats_ft_list: list[dict[str, dict]]) -> dict[str, dict[str, np.ndarray]]:
     """Aggregates stats for a single feature."""
-    means = np.stack([s["mean"] for s in stats_ft_list])
-    variances = np.stack([s["std"] ** 2 for s in stats_ft_list])
-    counts = np.stack([s["count"] for s in stats_ft_list])
-    total_count = counts.sum(axis=0)
+    first = stats_ft_list[0]
 
-    # Prepare weighted mean by matching number of dimensions
-    while counts.ndim < means.ndim:
-        counts = np.expand_dims(counts, axis=-1)
+    total_count = np.array(first["count"], copy=True)
+    weighted_mean_sum = first["mean"] * first["count"]
+    min_val = np.array(first["min"], copy=True)
+    max_val = np.array(first["max"], copy=True)
 
-    # Compute the weighted mean
-    weighted_means = means * counts
-    total_mean = weighted_means.sum(axis=0) / total_count
+    for s in stats_ft_list[1:]:
+        count = s["count"]
+        total_count = total_count + count
+        weighted_mean_sum = weighted_mean_sum + s["mean"] * count
+        min_val = np.minimum(min_val, s["min"])
+        max_val = np.maximum(max_val, s["max"])
 
-    # Compute the variance using the parallel algorithm
-    delta_means = means - total_mean
-    weighted_variances = (variances + delta_means**2) * counts
-    total_variance = weighted_variances.sum(axis=0) / total_count
+    total_mean = weighted_mean_sum / total_count
+
+    weighted_variance_sum = np.zeros_like(total_mean, dtype=np.result_type(total_mean, np.float64))
+    for s in stats_ft_list:
+        variances = s["std"] ** 2
+        delta_means = s["mean"] - total_mean
+        weighted_variance_sum = weighted_variance_sum + (variances + delta_means ** 2) * s["count"]
+
+    total_variance = weighted_variance_sum / total_count
 
     aggregated = {
-        "min": np.min(np.stack([s["min"] for s in stats_ft_list]), axis=0),
-        "max": np.max(np.stack([s["max"] for s in stats_ft_list]), axis=0),
+        "min": min_val,
+        "max": max_val,
         "mean": total_mean,
         "std": np.sqrt(total_variance),
         "count": total_count,
     }
 
     if stats_ft_list:
-        quantile_keys = [k for k in stats_ft_list[0] if k.startswith("q") and k[1:].isdigit()]
+        quantile_keys = [k for k in first if k.startswith("q") and k[1:].isdigit()]
 
         for q_key in quantile_keys:
             if all(q_key in s for s in stats_ft_list):
-                quantile_values = np.stack([s[q_key] for s in stats_ft_list])
-                weighted_quantiles = quantile_values * counts
-                aggregated[q_key] = weighted_quantiles.sum(axis=0) / total_count
+                weighted_quantile_sum = stats_ft_list[0][q_key] * stats_ft_list[0]["count"]
+                for s in stats_ft_list[1:]:
+                    weighted_quantile_sum = weighted_quantile_sum + s[q_key] * s["count"]
+                aggregated[q_key] = weighted_quantile_sum / total_count
 
     return aggregated
 
@@ -614,13 +621,17 @@ def aggregate_stats(stats_list: list[dict[str, dict]]) -> dict[str, dict[str, np
     - new_std = (std of all data)
     """
 
-    _assert_type_and_shape(stats_list)
-
     data_keys = {key for stats in stats_list for key in stats}
     aggregated_stats = {key: {} for key in data_keys}
 
     for key in data_keys:
         stats_with_key = [stats[key] for stats in stats_list if key in stats]
+
+        # Validate only the entries relevant to this feature (preserves same validation rules and errors)
+        for s in stats_with_key:
+            for stat_key, stat_value in s.items():
+                _validate_stat_value(stat_value, stat_key, key)
+
         aggregated_stats[key] = aggregate_feature_stats(stats_with_key)
 
     return aggregated_stats
