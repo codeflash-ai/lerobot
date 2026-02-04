@@ -29,6 +29,7 @@ import numpy as np
 import torch
 from accelerate import Accelerator
 from datasets.utils.logging import disable_progress_bar, enable_progress_bar
+from functools import lru_cache
 
 
 def inside_slurm():
@@ -244,6 +245,7 @@ def has_method(cls: object, method_name: str) -> bool:
     return hasattr(cls, method_name) and callable(getattr(cls, method_name))
 
 
+@lru_cache(maxsize=128)
 def is_valid_numpy_dtype_string(dtype_str: str) -> bool:
     """
     Return True if a given string can be converted to a numpy dtype.
