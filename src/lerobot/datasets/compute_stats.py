@@ -297,9 +297,11 @@ def _reshape_for_vector_stats(
     if not keepdims:
         return value
 
-    if len(original_shape) == 1 and value.ndim > 0:
+    orig_len = len(original_shape)
+
+    if orig_len == 1 and value.ndim > 0:
         return value.reshape(1)
-    elif len(original_shape) >= 2 and value.ndim == 1:
+    elif orig_len >= 2 and value.ndim == 1:
         return value.reshape(1, -1)
     return value
 
