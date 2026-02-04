@@ -1112,18 +1112,16 @@ def validate_feature_image_or_video(
         str: An error message if validation fails, otherwise an empty string.
     """
     # Note: The check of pixels range ([0,1] for float and [0,255] for uint8) is done by the image writer threads.
-    error_message = ""
     if isinstance(value, np.ndarray):
         actual_shape = value.shape
         c, h, w = expected_shape
         if len(actual_shape) != 3 or (actual_shape != (c, h, w) and actual_shape != (h, w, c)):
-            error_message += f"The feature '{name}' of shape '{actual_shape}' does not have the expected shape '{(c, h, w)}' or '{(h, w, c)}'.\n"
+            return f"The feature '{name}' of shape '{actual_shape}' does not have the expected shape '{(c, h, w)}' or '{(h, w, c)}'.\n"
+        return ""
     elif isinstance(value, PILImage.Image):
-        pass
+        return ""
     else:
-        error_message += f"The feature '{name}' is expected to be of type 'PIL.Image' or 'np.ndarray' channel first or channel last, but type '{type(value)}' provided instead.\n"
-
-    return error_message
+        return f"The feature '{name}' is expected to be of type 'PIL.Image' or 'np.ndarray' channel first or channel last, but type '{type(value)}' provided instead.\n"
 
 
 def validate_feature_string(name: str, value: str) -> str:
