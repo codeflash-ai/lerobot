@@ -35,12 +35,10 @@ def create_initial_features(
     Returns:
         The initial features dictionary structured by PipelineFeatureType.
     """
-    features = {PipelineFeatureType.ACTION: {}, PipelineFeatureType.OBSERVATION: {}}
-    if action:
-        features[PipelineFeatureType.ACTION] = action
-    if observation:
-        features[PipelineFeatureType.OBSERVATION] = observation
-    return features
+    return {
+        PipelineFeatureType.ACTION: action or {},
+        PipelineFeatureType.OBSERVATION: observation or {},
+    }
 
 
 # Helper to filter state/action keys based on regex patterns.
