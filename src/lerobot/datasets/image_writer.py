@@ -43,19 +43,23 @@ def image_array_to_pil_image(image_array: np.ndarray, range_check: bool = True) 
     if image_array.ndim != 3:
         raise ValueError(f"The array has {image_array.ndim} dimensions, but 3 is expected for an image.")
 
-    if image_array.shape[0] == 3:
+    # Work with a local variable to avoid accidental mutation of caller's object.
+    arr = image_array
+    if arr.shape[0] == 3:
         # Transpose from pytorch convention (C, H, W) to (H, W, C)
-        image_array = image_array.transpose(1, 2, 0)
+        # Keep this as a view when possible; contiguity will be ensured later only if required.
+        arr = arr.transpose(1, 2, 0)
 
-    elif image_array.shape[-1] != 3:
+    elif arr.shape[-1] != 3:
         raise NotImplementedError(
-            f"The image has {image_array.shape[-1]} channels, but 3 is required for now."
+            f"The image has {arr.shape[-1]} channels, but 3 is required for now."
         )
 
-    if image_array.dtype != np.uint8:
+    if arr.dtype != np.uint8:
         if range_check:
-            max_ = image_array.max().item()
-            min_ = image_array.min().item()
+            # Compute range and validate. Use numpy reductions (single calls) to keep behavior identical.
+            max_ = arr.max().item()
+            min_ = arr.min().item()
             if max_ > 1.0 or min_ < 0.0:
                 raise ValueError(
                     "The image data type is float, which requires values in the range [0.0, 1.0]. "
@@ -63,9 +67,19 @@ def image_array_to_pil_image(image_array: np.ndarray, range_check: bool = True) 
                     "provide a uint8 image with values in the range [0, 255]."
                 )
 
-        image_array = (image_array * 255).astype(np.uint8)
+        # Allocate the uint8 output buffer once and perform the scaling into it to avoid creating
+        # an extra large float temporary (reduces peak memory and can be faster).
+        out = np.empty(arr.shape, dtype=np.uint8, order="C")
+        # Use numpy ufunc with out= to perform multiplication then cast directly into uint8 buffer.
+        # casting='unsafe' is required because we are writing floats into uint8; this mirrors astype behavior.
+        np.multiply(arr, 255, out=out, casting="unsafe")
+        arr = out
+    else:
+        # Ensure contiguous memory for uint8 arrays to avoid copies inside PIL where possible.
+        if not arr.flags["C_CONTIGUOUS"]:
+            arr = np.ascontiguousarray(arr)
 
-    return PIL.Image.fromarray(image_array)
+    return PIL.Image.fromarray(arr)
 
 
 def write_image(image: np.ndarray | PIL.Image.Image, fpath: Path, compress_level: int = 1):
