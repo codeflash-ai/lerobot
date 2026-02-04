@@ -643,33 +643,34 @@ def hw_to_dataset_features(
         dict: A LeRobot features dictionary.
     """
     features = {}
-    joint_fts = {
-        key: ftype
-        for key, ftype in hw_features.items()
-        if ftype is float or (isinstance(ftype, PolicyFeature) and ftype.type != FeatureType.VISUAL)
-    }
-    cam_fts = {key: shape for key, shape in hw_features.items() if isinstance(shape, tuple)}
+    joint_names = []
+    
+    for key, ftype in hw_features.items():
+        if isinstance(ftype, tuple):
+            # Camera feature
+            features[f"{prefix}.images.{key}"] = {
+                "dtype": "video" if use_video else "image",
+                "shape": ftype,
+                "names": ["height", "width", "channels"],
+            }
+        elif ftype is float or (isinstance(ftype, PolicyFeature) and ftype.type != FeatureType.VISUAL):
+            # Joint feature
+            joint_names.append(key)
+    
+    if joint_names:
+        if prefix == ACTION:
+            features[prefix] = {
+                "dtype": "float32",
+                "shape": (len(joint_names),),
+                "names": joint_names,
+            }
+        elif prefix == OBS_STR:
+            features[f"{prefix}.state"] = {
+                "dtype": "float32",
+                "shape": (len(joint_names),),
+                "names": joint_names,
+            }
 
-    if joint_fts and prefix == ACTION:
-        features[prefix] = {
-            "dtype": "float32",
-            "shape": (len(joint_fts),),
-            "names": list(joint_fts),
-        }
-
-    if joint_fts and prefix == OBS_STR:
-        features[f"{prefix}.state"] = {
-            "dtype": "float32",
-            "shape": (len(joint_fts),),
-            "names": list(joint_fts),
-        }
-
-    for key, shape in cam_fts.items():
-        features[f"{prefix}.images.{key}"] = {
-            "dtype": "video" if use_video else "image",
-            "shape": shape,
-            "names": ["height", "width", "channels"],
-        }
 
     _validate_feature_names(features)
     return features
