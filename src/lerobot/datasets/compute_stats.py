@@ -564,27 +564,27 @@ def _assert_type_and_shape(stats_list: list[dict[str, dict]]):
 
 def aggregate_feature_stats(stats_ft_list: list[dict[str, dict]]) -> dict[str, dict[str, np.ndarray]]:
     """Aggregates stats for a single feature."""
-    means = np.stack([s["mean"] for s in stats_ft_list])
-    variances = np.stack([s["std"] ** 2 for s in stats_ft_list])
-    counts = np.stack([s["count"] for s in stats_ft_list])
+    means = np.asarray([s["mean"] for s in stats_ft_list])
+    stds = np.asarray([s["std"] for s in stats_ft_list])
+    variances = stds * stds
+    counts = np.asarray([s["count"] for s in stats_ft_list])
     total_count = counts.sum(axis=0)
 
     # Prepare weighted mean by matching number of dimensions
-    while counts.ndim < means.ndim:
-        counts = np.expand_dims(counts, axis=-1)
+    if counts.ndim < means.ndim:
+        counts = counts.reshape(counts.shape + (1,) * (means.ndim - counts.ndim))
 
     # Compute the weighted mean
-    weighted_means = means * counts
-    total_mean = weighted_means.sum(axis=0) / total_count
+    total_mean = (means * counts).sum(axis=0) / total_count
 
     # Compute the variance using the parallel algorithm
     delta_means = means - total_mean
-    weighted_variances = (variances + delta_means**2) * counts
-    total_variance = weighted_variances.sum(axis=0) / total_count
+    total_variance = (((variances + delta_means ** 2) * counts).sum(axis=0)) / total_count
+
 
     aggregated = {
-        "min": np.min(np.stack([s["min"] for s in stats_ft_list]), axis=0),
-        "max": np.max(np.stack([s["max"] for s in stats_ft_list]), axis=0),
+        "min": np.min(np.asarray([s["min"] for s in stats_ft_list]), axis=0),
+        "max": np.max(np.asarray([s["max"] for s in stats_ft_list]), axis=0),
         "mean": total_mean,
         "std": np.sqrt(total_variance),
         "count": total_count,
@@ -595,9 +595,8 @@ def aggregate_feature_stats(stats_ft_list: list[dict[str, dict]]) -> dict[str, d
 
         for q_key in quantile_keys:
             if all(q_key in s for s in stats_ft_list):
-                quantile_values = np.stack([s[q_key] for s in stats_ft_list])
-                weighted_quantiles = quantile_values * counts
-                aggregated[q_key] = weighted_quantiles.sum(axis=0) / total_count
+                quantile_values = np.asarray([s[q_key] for s in stats_ft_list])
+                aggregated[q_key] = (quantile_values * counts).sum(axis=0) / total_count
 
     return aggregated
 
