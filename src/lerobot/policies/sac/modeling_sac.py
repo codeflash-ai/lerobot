@@ -295,12 +295,14 @@ class SACPolicy(
 
         # 4- Calculate loss
         # Compute state-action value loss (TD loss) for all of the Q functions in the ensemble.
-        td_target_duplicate = einops.repeat(td_target, "b -> e b", e=q_preds.shape[0])
+        # Use expand instead of einops.repeat for zero-copy view
+        td_target_expanded = td_target.unsqueeze(0).expand(q_preds.shape[0], -1)
+        # You compute the mean loss of the batch for each critic and then to compute the final loss you sum them up
         # You compute the mean loss of the batch for each critic and then to compute the final loss you sum them up
         critics_loss = (
             F.mse_loss(
                 input=q_preds,
-                target=td_target_duplicate,
+                target=td_target_expanded,
                 reduction="none",
             ).mean(dim=1)
         ).sum()
