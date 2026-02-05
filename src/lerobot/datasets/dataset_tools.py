@@ -450,9 +450,12 @@ def _fractions_to_episode_indices(
     if sum(splits.values()) > 1.0:
         raise ValueError("Split fractions must sum to <= 1.0")
 
-    indices = list(range(total_episodes))
-    result = {}
+    result: dict[str, list[int]] = {}
     start_idx = 0
+
+
+    # Cache the last split key to avoid recreating the keys list on every iteration
+    last_key = next(reversed(splits), None)
 
     for split_name, fraction in splits.items():
         num_episodes = int(total_episodes * fraction)
@@ -460,9 +463,13 @@ def _fractions_to_episode_indices(
             logging.warning(f"Split '{split_name}' has no episodes, skipping...")
             continue
         end_idx = start_idx + num_episodes
-        if split_name == list(splits.keys())[-1]:
+        if split_name == last_key:
             end_idx = total_episodes
-        result[split_name] = indices[start_idx:end_idx]
+        # Build only the needed slice instead of allocating the full indices list upfront
+        # Handle negative num_episodes by normalizing the end_idx
+        if end_idx < 0:
+            end_idx = total_episodes + end_idx
+        result[split_name] = list(range(start_idx, end_idx))
         start_idx = end_idx
 
     return result
