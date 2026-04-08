@@ -127,7 +127,7 @@ phone = ["hebi-py>=2.8.0,<2.12.0", "teleop>=0.1.0,<0.2.0", "fastapi<1.0"]
 
 # Policies
 wallx = [
-    "transformers==4.49.0",
+    "transformers==5.0.0rc3",
     "peft==0.17.1",
     "scipy==1.15.3",
     "torchdiffeq==0.2.5",
@@ -394,7 +394,7 @@ ignore_errors = false
 # ignore_errors = false
 
 [tool.uv]
-# wallx requires transformers==4.49.0 which conflicts with other extras that need >=4.53.0
+# wallx requires transformers==5.0.0rc3 which conflicts with other extras that need >=4.53.0
 conflicts = [
     [
         { extra = "wallx" },
